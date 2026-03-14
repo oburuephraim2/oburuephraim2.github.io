@@ -1,0 +1,12 @@
+{
+  "projects": [
+    {
+      "name": "workingv1",
+      "description": "Project in workingv1 folder",
+      "folderPath": "workingv1",
+      "pagePath": "index.html",
+      "icon": "\ud83c\udfa8",
+      "createdDate": "2026-03-14T19:23:23.243104Z"
+    }
+  ]
+}

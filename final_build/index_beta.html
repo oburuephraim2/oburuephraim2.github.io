@@ -1,0 +1,2705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplified Bootstrap Builder Template</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { display: flex; height: 100vh; overflow: hidden; background: #f0f2f5; }
+        #sidebar { width: 260px; background: #212529; color: white; padding: 20px; overflow-y: auto; flex-shrink: 0; }
+        #canvas-container { flex: 1; overflow-y: auto; padding: 40px; display: flex; justify-content: center; }
+        #canvas { width: 100%; max-width: 1000px; background: white; min-height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        #inspector { width: 300px; background: white; border-left: 1px solid #dee2e6; padding: 20px; display: none; flex-shrink: 0; overflow-y: auto; max-height: 100vh; }
+
+        .section-wrapper { position: relative; cursor: pointer; border: 2px solid transparent; margin-bottom: 15px;}
+        .section-wrapper:hover { border: 2px solid #0d6efd; }
+        .section-wrapper.active { border: 2px solid #0d6efd; z-index: 10; background: rgba(13, 110, 253, 0.02); }
+
+        /* Highlight for selected element within a section */
+        .selected-element-highlight { outline: 2px solid #ffc107; }
+
+        .inspector-label { font-size: 0.75rem; font-weight: bold; color: #6c757d; text-transform: uppercase; margin-top: 15px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="mb-3 pb-3 border-bottom">
+            <small class="text-muted d-block mb-2">Current Project:</small>
+            <div class="input-group input-group-sm">
+                <select class="form-select form-select-sm" id="projectSelector" onchange="switchProject(this.value)">
+                    <!-- Projects listed here -->
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="showCreateProjectModal()">+</button>
+            </div>
+            <button class="btn btn-outline-info btn-sm w-100 mt-2" onclick="showProjectsDashboard()">🎨 All Projects</button>
+        </div>
+        <h5 class="mb-3">📄 Pages</h5>
+        <div id="pagesList" class="mb-3" style="max-height: 150px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px;">
+            <!-- Pages will be listed here -->
+        </div>
+        <div class="d-grid gap-2 mb-3">
+            <button class="btn btn-success btn-sm" onclick="createNewPage()">+ New Page</button>
+            <button class="btn btn-danger btn-sm" id="deletePageBtn" onclick="deletePage(currentPageId)">🗑️ Delete Page</button>
+        </div>
+        <hr>
+        <h5 class="mb-4">Components</h5>
+        <div class="d-grid gap-2">
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('generic')">+ Generic Section</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('hero')">+ Hero Section</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('cards')">+ Feature Cards</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('dashboard')">+ Dashboard</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('gallery')">+ Image Gallery</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('testimonials')">+ Testimonials</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('stats')">+ Stats Section</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('cta')">+ Call to Action</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('form')">+ Form</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('pricing')">+ Pricing Table</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('footer')">+ Footer</button>
+        </div>
+        <hr>
+        <button class="btn btn-primary w-100 mb-2" onclick="showExportModal()">Export HTML</button>
+        <button class="btn btn-info w-100 mb-2" onclick="importSite()">📥 Import Site</button>
+        <button class="btn btn-success w-100 mb-2" onclick="openShowcase()">🎨 View Showcase</button>
+        <button class="btn btn-warning w-100 mb-2" onclick="clearCurrentPage()">Clear Page Content</button>
+        <button class="btn btn-danger w-100" onclick="clearAllData()">🗑️ Clear All Data</button>
+        <input type="file" id="siteImportInput" style="display:none;" accept=".html,.zip" onchange="handleFileImport(this.files[0])">
+    </div>
+
+    <div id="canvas-container">
+        <div id="canvas" onclick="deselect(event)"></div>
+    </div>
+
+   <div id="inspector">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="m-0">Section Settings</h6>
+        <button class="btn-close btn-sm" onclick="closeInspector()"></button>
+    </div>
+
+    <label class="inspector-label">Background Color</label>
+    <input type="color" class="form-control form-control-color w-100" id="bgColor" oninput="updateStyle('backgroundColor', this.value)">
+
+    <label class="inspector-label">Text Color</label>
+    <input type="color" class="form-control form-control-color w-100" id="textColor" oninput="updateStyle('color', this.value)">
+
+    <label class="inspector-label">Vertical Padding</label>
+    <input type="range" class="form-range" min="0" max="5" step="1" id="paddingRange" oninput="updatePadding(this.value)">
+
+    <div id="heroSettingsContainer" style="display: none;">
+        <label class="inspector-label">Hero Background Image URL</label>
+        <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" id="heroBackgroundUrl" placeholder="https://example.com/image.jpg" oninput="updateHeroBackgroundImage(this.value)">
+            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="triggerFileUpload('heroImageFileUpload')">📁</button>
+        </div>
+        <input type="file" id="heroImageFileUpload" style="display:none;" accept="image/*" onchange="handleImageFileUpload(this, 'hero')">
+    </div>
+
+    <div id="formSettingsContainer" style="display: none;">
+        <label class="inspector-label">Form Settings</label>
+        <div class="mb-2">
+            <label for="formMethod" class="form-label small">Method</label>
+            <select class="form-control form-control-sm" id="formMethod" onchange="updateFormAttribute('method', this.value)">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+            </select>
+        </div>
+        <div class="mb-2">
+            <label for="formAction" class="form-label small">Action URL</label>
+            <input type="text" class="form-control form-control-sm" id="formAction" placeholder="/submit" oninput="updateFormAttribute('action', this.value)">
+        </div>
+        <div class="mb-2">
+            <label for="formEnctype" class="form-label small">Encoding Type</label>
+            <select class="form-control form-control-sm" id="formEnctype" onchange="updateFormAttribute('enctype', this.value)">
+                <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+                <option value="multipart/form-data">multipart/form-data</option>
+                <option value="text/plain">text/plain</option>
+            </select>
+        </div>
+    </div>
+
+    <label class="inspector-label">Section Actions</label>
+    <div class="d-grid gap-2 mb-3">
+        <button class="btn btn-info btn-sm w-100" onclick="moveSection('up')">↑ Move Up</button>
+        <button class="btn btn-info btn-sm w-100" onclick="moveSection('down')">↓ Move Down</button>
+        <button class="btn btn-warning btn-sm w-100" onclick="duplicateSection()">⚡ Duplicate</button>
+        <button class="btn btn-danger btn-sm w-100" onclick="deleteActiveSection()">Delete Section</button>
+    </div>
+
+    <label class="inspector-label">Add Elements</label>
+    <div class="d-grid gap-2 mb-4">
+        <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('heading')">+ Heading</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('paragraph')">+ Paragraph</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('image')">+ Image</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('button')">+ Button</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('link')">+ Link</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" id="cardButton" style="display: none;" onclick="addElement('card')">+ Card</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" id="galleryItemButton" style="display: none;" onclick="addElement('gallery-item')">+ Gallery Item</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" id="pricingCardButton" style="display: none;" onclick="addPricingCard()">+ Pricing Card</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" id="testimonialCardButton" style="display: none;" onclick="addTestimonialCard()">+ Testimonial Card</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" id="statItemButton" style="display: none;" onclick="addStatItem()">+ Stat Item</button>
+    </div>
+
+    <div id="form-element-creator" style="display: none;">
+        <label class="inspector-label">Add Form Elements</label>
+        <div class="d-grid gap-2 mb-4">
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('text')">+ Text Input</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('email')">+ Email Input</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('password')">+ Password Input</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('checkbox')">+ Checkbox</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('radio')">+ Radio Button</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('textarea')">+ Textarea</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('select')">+ Select Dropdown</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('submit')">+ Submit Button</button>
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="addFormElement('label')">+ Label</button>
+        </div>
+    </div>
+
+    <div id="element-inspector" style="display: none;">
+        <label class="inspector-label">Selected Element Properties</label>
+        <div class="mb-2">
+            <label for="elementId" class="form-label small">ID</label>
+            <input type="text" class="form-control form-control-sm" id="elementId" oninput="updateElementAttribute('id', this.value)">
+        </div>
+        <div class="mb-2">
+            <label for="elementClass" class="form-label small">Class</label>
+            <input type="text" class="form-control form-control-sm" id="elementClass" oninput="updateElementAttribute('className', this.value)">
+        </div>
+        <div class="mb-2" id="elementSrcContainer">
+            <label for="elementSrc" class="form-label small">Image URL (src)</label>
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm" id="elementSrc" oninput="updateElementAttribute('src', this.value)">
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="triggerFileUpload('imageFileUpload')">📁</button>
+            </div>
+            <input type="file" id="imageFileUpload" style="display:none;" accept="image/*" onchange="handleImageFileUpload(this, 'src')">
+        </div>
+        <div class="mb-2" id="elementHrefContainer">
+            <label for="elementHref" class="form-label small">Link URL (href)</label>
+            <input type="text" class="form-control form-control-sm" id="elementHref" oninput="updateElementAttribute('href', this.value)">
+        </div>
+        <div class="mb-2" id="elementTextContentContainer">
+            <label for="elementTextContent" class="form-label small">Text Content</label>
+            <textarea class="form-control form-control-sm" id="elementTextContent" oninput="updateElementText(this.value)"></textarea>
+        </div>
+        <div class="mb-2" id="elementFontSizeContainer">
+            <label for="elementFontSize" class="form-label small">Font Size</label>
+            <input type="number" class="form-control form-control-sm" id="elementFontSize" placeholder="px" oninput="updateElementStyle('fontSize', this.value + 'px')">
+        </div>
+        <div class="mb-2" id="elementTextAlignContainer">
+            <label class="form-label small">Text Align</label>
+            <div class="btn-group w-100" role="group">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="updateElementStyle('textAlign', 'left')">L</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="updateElementStyle('textAlign', 'center')">C</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="updateElementStyle('textAlign', 'right')">R</button>
+            </div>
+        </div>
+        <div class="mb-2" id="elementBgColorContainer" style="display: none;">
+            <label class="form-label small">Background Color</label>
+            <input type="color" class="form-control form-control-color w-100" id="elementBgColor" oninput="updateSelectedElementStyle('backgroundColor', this.value)">
+        </div>
+        <div class="mb-2" id="elementTextColorContainer" style="display: none;">
+            <label class="form-label small">Text Color</label>
+            <input type="color" class="form-control form-control-color w-100" id="elementTextColor" oninput="updateSelectedElementStyle('color', this.value)">
+        </div>
+        <div class="mb-2" id="elementBgImageContainer" style="display: none;">
+            <label class="form-label small">Background Image URL</label>
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm" id="elementBgImage" placeholder="https://example.com/image.jpg" oninput="updateSelectedElementStyle('backgroundImage', 'url(' + this.value + ')')">
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="triggerFileUpload('bgImageFileUpload')">📁</button>
+            </div>
+            <input type="file" id="bgImageFileUpload" style="display:none;" accept="image/*" onchange="handleImageFileUpload(this, 'bgImage')">
+        </div>
+        <label class="inspector-label">Move Element</label>
+        <div class="d-grid gap-2 mb-3">
+            <div class="btn-group" role="group">
+                <button class="btn btn-info btn-sm" onclick="moveSelectedElement('left')">← Left</button>
+                <button class="btn btn-info btn-sm" onclick="moveSelectedElement('right')">Right →</button>
+            </div>
+            <div class="btn-group" role="group">
+                <button class="btn btn-info btn-sm" onclick="moveSelectedElement('up')">↑ Up</button>
+                <button class="btn btn-info btn-sm" onclick="moveSelectedElement('down')">↓ Down</button>
+            </div>
+        </div>
+        <button class="btn btn-danger btn-sm w-100 mt-2" onclick="deleteSelectedElement()">Delete Element</button>
+        <button class="btn btn-success btn-sm w-100 mt-2" id="duplicateElementBtn" style="display: none;" onclick="duplicateSelectedElement()">⚡ Duplicate</button>
+        <button class="btn btn-secondary btn-sm w-100 mt-2" id="selectParentCardBtn" style="display: none;" onclick="selectParentCard()">← Select Parent Card</button>
+    </div>
+
+    <div id="form-settings-properties" style="display: none;">
+        <label class="inspector-label">Form Settings</label>
+        <div class="mb-2">
+            <label for="sectionFormMethod" class="form-label small">Method</label>
+            <select class="form-control form-control-sm" id="sectionFormMethod" onchange="updateFormAttribute('method', this.value)">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+            </select>
+        </div>
+        <div class="mb-2">
+            <label for="sectionFormAction" class="form-label small">Action URL</label>
+            <input type="text" class="form-control form-control-sm" id="sectionFormAction" placeholder="/submit" oninput="updateFormAttribute('action', this.value)">
+        </div>
+        <div class="mb-2">
+            <label for="sectionFormEnctype" class="form-label small">Encoding Type</label>
+            <select class="form-control form-control-sm" id="sectionFormEnctype" onchange="updateFormAttribute('enctype', this.value)">
+                <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+                <option value="multipart/form-data">multipart/form-data</option>
+                <option value="text/plain">text/plain</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="form-element-properties" style="display: none;">
+        <label class="inspector-label">Form Element Properties</label>
+        <div class="mb-2">
+            <label for="formElementName" class="form-label small">Name</label>
+            <input type="text" class="form-control form-control-sm" id="formElementName" oninput="updateElementAttribute('name', this.value)">
+        </div>
+        <div class="mb-2" id="formElementPlaceholderContainer">
+            <label for="formElementPlaceholder" class="form-label small">Placeholder</label>
+            <input type="text" class="form-control form-control-sm" id="formElementPlaceholder" oninput="updateElementAttribute('placeholder', this.value)">
+        </div>
+        <div class="mb-2" id="formElementValueContainer">
+            <label for="formElementValue" class="form-label small">Value</label>
+            <input type="text" class="form-control form-control-sm" id="formElementValue" oninput="updateElementAttribute('value', this.value)">
+        </div>
+        <div class="mb-2" id="formElementForContainer">
+            <label for="formElementFor" class="form-label small">Label For (ID)</label>
+            <input type="text" class="form-control form-control-sm" id="formElementFor" oninput="updateElementAttribute('for', this.value)">
+        </div>
+        <div class="mb-2" id="formElementTypeContainer">
+            <label for="formElementType" class="form-label small">Input Type</label>
+            <select class="form-control form-control-sm" id="formElementType" onchange="updateElementAttribute('type', this.value)">
+                <option value="text">text</option>
+                <option value="email">email</option>
+                <option value="password">password</option>
+                <option value="number">number</option>
+                <option value="date">date</option>
+            </select>
+        </div>
+        <div class="mb-2" id="formElementCheckedContainer">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="formElementChecked" onchange="updateElementAttribute('checked', this.checked)">
+                <label class="form-check-label" for="formElementChecked">Checked</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="projectNameInput" class="form-label">Project Name</label>
+                    <input type="text" class="form-control" id="projectNameInput" placeholder="My Awesome Website">
+                </div>
+                <div class="mb-3">
+                    <label for="projectDescInput" class="form-label">Description (optional)</label>
+                    <textarea class="form-control" id="projectDescInput" rows="2" placeholder="Describe your project..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createProject()">Create Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Dashboard Modal -->
+<div class="modal fade" id="projectsDashboardModal" tabindex="-1" style="max-height: 100vh;">
+    <div class="modal-dialog modal-lg" style="max-height: 90vh; overflow-y: auto;">
+        <div class="modal-content">
+            <div class="modal-header bg-light sticky-top">
+                <h5 class="modal-title">🎨 Projects Gallery</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="projectsGallery" class="row g-3">
+                    <!-- Projects will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export Project</h5>
+                <button type="button" class="btn-close" onclick="closeExportModal()"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Project Metadata Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Project Metadata (For Showcase Gallery)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Project Name:</label>
+                            <input type="text" class="form-control" id="exportProjectName" placeholder="e.g., workingv1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Project Description:</label>
+                            <textarea class="form-control" id="exportProjectDescription" rows="2" placeholder="Brief description of your project"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Project Icon (Emoji):</label>
+                            <input type="text" class="form-control" id="exportProjectIcon" placeholder="🎨" maxlength="2" style="max-width: 100px;">
+                            <small class="text-muted">Paste any emoji here</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Folder Path (relative to manifest):</label>
+                            <input type="text" class="form-control" id="exportFolderPath" placeholder="e.g., workingv1">
+                            <small class="text-muted">The folder where exported files will be placed</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pages Selection Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Select Pages to Export</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Export Option:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportOption" id="exportCurrent" value="current" checked>
+                                <label class="form-check-label" for="exportCurrent">
+                                    Current Page Only
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportOption" id="exportSelected" value="selected">
+                                <label class="form-check-label" for="exportSelected">
+                                    Selected Pages
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportOption" id="exportAll" value="all">
+                                <label class="form-check-label" for="exportAll">
+                                    All Pages
+                                </label>
+                            </div>
+                        </div>
+                        <div id="selectedPagesContainer" style="display: none; max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px;">
+                            <!-- Page checkboxes will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Info -->
+                <div class="alert alert-info mb-0">
+                    <small>
+                        <strong>What will be exported:</strong><br>
+                        ✓ HTML files for selected pages<br>
+                        ✓ Project manifest entry (JSON) for projects-manifest.json<br>
+                        ✓ Asset files (images) organized in assets/ folder
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="exportPages()">Export Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const inspector = document.getElementById('inspector');
+    let activeWrapper = null;
+    let selectedElement = null;
+
+    // Cached DOM references for performance
+    const elementInspectorDiv = document.getElementById('element-inspector');
+    const formElementPropertiesDiv = document.getElementById('form-element-properties');
+    const formElementCreator = document.getElementById('form-element-creator');
+    const cardButton = document.getElementById('cardButton');
+    const galleryItemButton = document.getElementById('galleryItemButton');
+    const pricingCardButton = document.getElementById('pricingCardButton');
+    const testimonialCardButton = document.getElementById('testimonialCardButton');
+    const statItemButton = document.getElementById('statItemButton');
+
+    // ===== PROJECT MANAGEMENT (Builder Only) =====
+    // These are builder projects stored in localStorage for editing within the builder
+    // NOTE: These are SEPARATE from showcase projects (which read from projects-manifest.json)
+    // The showcase page is a standalone gallery that displays projects from /ProjectName/ folders
+    
+    let currentProjectId = null;
+    let projects = {}; // { [projectId]: { id, name, description, createdDate, pages, localFiles } }
+    let projectCounter = 0;
+    
+    // Pages management (within a builder project)
+    let currentPageId = null;
+    let pages = {};
+    let pageCounter = 0;
+    
+    // Local files tracking - maps data URL to file info (for builder images)
+    let localFiles = {}; // { [fileHash]: { filename, dataUrl, type } }
+    // ===== END PROJECT MANAGEMENT =====
+
+    // Ensure Bootstrap modal is loaded
+    if (typeof bootstrap === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js';
+        document.head.appendChild(script);
+    }
+    
+    // File handling functions
+    function triggerFileUpload(inputId) {
+        document.getElementById(inputId).click();
+    }
+    
+    function generateFileHash(filename, size) {
+        return `${filename}_${size}_${Date.now()}`;
+    }
+    
+    function handleImageFileUpload(inputElement, type) {
+        const file = inputElement.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            const fileHash = generateFileHash(file.name, file.size);
+            
+            // Store file info
+            localFiles[fileHash] = {
+                filename: file.name,
+                dataUrl: dataUrl,
+                type: file.type,
+                originalName: file.name
+            };
+            
+            // Update the appropriate input field
+            if (type === 'src') {
+                document.getElementById('elementSrc').value = fileHash;
+                if (selectedElement && selectedElement.tagName === 'IMG') {
+                    selectedElement.src = dataUrl;
+                    selectedElement.dataset.fileHash = fileHash;
+                    saveState();
+                }
+            } else if (type === 'bgImage') {
+                document.getElementById('elementBgImage').value = fileHash;
+                if (selectedElement) {
+                    selectedElement.style.backgroundImage = `url('${dataUrl}')`;
+                    selectedElement.dataset.bgFileHash = fileHash;
+                    saveState();
+                }
+            } else if (type === 'hero') {
+                document.getElementById('heroBackgroundUrl').value = fileHash;
+                if (activeWrapper && activeWrapper.dataset.type === 'hero') {
+                    const target = activeWrapper.querySelector('section');
+                    const gradientMatch = target.style.backgroundImage.match(/(linear-gradient\([^,]+,[^)]+\)),\s*url\([^)]+\)/);
+                    if (gradientMatch) {
+                        target.style.backgroundImage = `${gradientMatch[1]}, url('${dataUrl}')`;
+                    } else {
+                        target.style.backgroundImage = `url('${dataUrl}')`;
+                    }
+                    target.dataset.bgFileHash = fileHash;
+                    saveState();
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+        
+        // Reset input
+        inputElement.value = '';
+    }
+    
+    const templates = {
+        generic: `<section class="py-3 text-center bg-light" style="color: #000000;">
+            <div class="container">
+                <h2 contenteditable="true">Generic Section Title</h2>
+                <p contenteditable="true">This is a generic section. Click to edit content.</p>
+            </div>
+        </section>`,
+        hero: `<section class="py-5 text-center" style="background-color: #343a40; color: #ffffff; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://picsum.photos/id/1015/1200/800'); background-size: cover; background-position: center;">
+            <div class="container py-5">
+                <h1 class="display-4 fw-bold" contenteditable="true">Modern Design</h1>
+                <p class="lead" contenteditable="true">Click here to edit text directly over the background image.</p>
+            </div>
+        </section>`,
+        cards: `<section class="py-5 bg-light">
+            <div class="container">
+                <div class="row g-4 justify-content-center">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h5 contenteditable="true">Feature</h5>
+                                <p contenteditable="true">Description.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h5 contenteditable="true">Feature</h5>
+                                <p contenteditable="true">Description.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h5 contenteditable="true">Feature</h5>
+                                <p contenteditable="true">Description.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>`,
+        gallery: `<section class="py-5" style="background-color: #ffffff;">
+            <div class="container">
+                <div class="row g-3 justify-content-center gallery-row">
+                    <div class="col-12 col-md-6 gallery-item">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5">
+                                <img src="https://picsum.photos/id/1015/600/400" class="img-fluid rounded shadow-sm clickable-img" style="cursor:pointer;" onclick="selectElement(this, event)">
+                            </div>
+                            <div class="col-md-7">
+                                <h5 contenteditable="true">Gallery Image</h5>
+                                <p contenteditable="true" class="text-muted mb-0">Beautiful photo with description. Text sits beside image on desktop, stacks below on mobile (responsive grid).</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 gallery-item">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5">
+                                <img src="https://picsum.photos/id/1016/600/400" class="img-fluid rounded shadow-sm clickable-img" style="cursor:pointer;" onclick="selectElement(this, event)">
+                            </div>
+                            <div class="col-md-7">
+                                <h5 contenteditable="true">Another Gallery Image</h5>
+                                <p contenteditable="true" class="text-muted mb-0">Another beautiful photo with description.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>`,
+        cta: `<section class="py-5 bg-primary text-white text-center">
+            <div class="container">
+                <h2 contenteditable="true">Ready to get started?</h2>
+                <p class="lead" contenteditable="true">Join us today and experience the difference.</p>
+                <button class="btn btn-light mt-3">Sign Up Now</button>
+            </div>
+        </section>`,
+        testimonials: `<section class="py-5 bg-light">
+            <div class="container">
+                <h2 class="text-center mb-5" contenteditable="true">What Our Clients Say</h2>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <p class="card-text" contenteditable="true">"This product has been a game changer for our business. Highly recommended!"</p>
+                                <footer class="blockquote-footer" contenteditable="true">Client Name</footer>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <p class="card-text" contenteditable="true">"Exceptional service and support. Very professional team."</p>
+                                <footer class="blockquote-footer" contenteditable="true">Client Name</footer>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <p class="card-text" contenteditable="true">"Best investment we made this year. Great ROI!"</p>
+                                <footer class="blockquote-footer" contenteditable="true">Client Name</footer>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>`,
+        stats: `<section class="py-5 bg-primary text-white">
+            <div class="container">
+                <div class="row text-center g-4">
+                    <div class="col-md-3">
+                        <h3 class="display-6" contenteditable="true">100+</h3>
+                        <p contenteditable="true">Happy Clients</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="display-6" contenteditable="true">500+</h3>
+                        <p contenteditable="true">Projects Done</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="display-6" contenteditable="true">10+</h3>
+                        <p contenteditable="true">Years Experience</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="display-6" contenteditable="true">24/7</h3>
+                        <p contenteditable="true">Support</p>
+                    </div>
+                </div>
+            </div>
+        </section>`,
+        pricing: `<section class="py-5 bg-light">
+            <div class="container">
+                <h2 class="text-center mb-5" contenteditable="true">Our Pricing Plans</h2>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <h5 contenteditable="true">Basic</h5>
+                                <h3 contenteditable="true">$29</h3>
+                                <p contenteditable="true">per month</p>
+                                <ul class="list-unstyled" style="text-align: left;">
+                                    <li contenteditable="true">✓ Feature 1</li>
+                                    <li contenteditable="true">✓ Feature 2</li>
+                                    <li contenteditable="true">✓ Feature 3</li>
+                                </ul>
+                                <button class="btn btn-primary w-100 mt-3">Get Started</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <h5 contenteditable="true">Professional</h5>
+                                <h3 contenteditable="true">$79</h3>
+                                <p contenteditable="true">per month</p>
+                                <ul class="list-unstyled" style="text-align: left;">
+                                    <li contenteditable="true">✓ Feature 1</li>
+                                    <li contenteditable="true">✓ Feature 2</li>
+                                    <li contenteditable="true">✓ Feature 3</li>
+                                </ul>
+                                <button class="btn btn-primary w-100 mt-3">Get Started</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <h5 contenteditable="true">Enterprise</h5>
+                                <h3 contenteditable="true">$199</h3>
+                                <p contenteditable="true">per month</p>
+                                <ul class="list-unstyled" style="text-align: left;">
+                                    <li contenteditable="true">✓ Feature 1</li>
+                                    <li contenteditable="true">✓ Feature 2</li>
+                                    <li contenteditable="true">✓ Feature 3</li>
+                                </ul>
+                                <button class="btn btn-primary w-100 mt-3">Get Started</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>`,
+        dashboard: `<section class="py-5" style="background-color: #f5f7fa;">
+            <div class="container-fluid px-4">
+                <h2 class="mb-4" contenteditable="true">Dashboard</h2>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Total Users</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">12,543</h3>
+                                <small class="text-success" contenteditable="true">↑ 12% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Revenue</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">$45,231</h3>
+                                <small class="text-success" contenteditable="true">↑ 8% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Conversion Rate</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">3.24%</h3>
+                                <small class="text-danger" contenteditable="true">↓ 2% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Active Sessions</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">892</h3>
+                                <small class="text-success" contenteditable="true">↑ 24% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h6 class="mb-0" contenteditable="true">Monthly Sales</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small" contenteditable="true">[Chart placeholder - Add your chart here]</p>
+                                <div style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; opacity: 0.3;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h6 class="mb-0" contenteditable="true">Top Products</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small contenteditable="true">Product A</small>
+                                        <small contenteditable="true">45%</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar" style="width: 45%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small contenteditable="true">Product B</small>
+                                        <small contenteditable="true">30%</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" style="width: 30%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small contenteditable="true">Product C</small>
+                                        <small contenteditable="true">25%</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-warning" style="width: 25%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h6 class="mb-0" contenteditable="true">Recent Transactions</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 30%;" contenteditable="true">Customer</th>
+                                                <th style="width: 30%;" contenteditable="true">Product</th>
+                                                <th style="width: 20%;" contenteditable="true">Amount</th>
+                                                <th style="width: 20%;" contenteditable="true">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td contenteditable="true">John Smith</td>
+                                                <td contenteditable="true">Pro Plan</td>
+                                                <td contenteditable="true">$99.00</td>
+                                                <td><span class="badge bg-success">Completed</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td contenteditable="true">Jane Doe</td>
+                                                <td contenteditable="true">Basic Plan</td>
+                                                <td contenteditable="true">$29.00</td>
+                                                <td><span class="badge bg-info">Pending</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td contenteditable="true">Mike Johnson</td>
+                                                <td contenteditable="true">Enterprise</td>
+                                                <td contenteditable="true">$299.00</td>
+                                                <td><span class="badge bg-success">Completed</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>`,
+        form: `<section class="py-5 bg-light">
+            <div class="container">
+                <h2 class="text-center mb-4" contenteditable="true">Contact Us</h2>
+                <form></form>
+            </div>
+        </section>`,
+        footer: `<footer class="py-4 bg-dark text-white text-center">
+            <div class="container">
+                <p class="mb-0 small" contenteditable="true">© 2026 Your Company. All rights reserved.</p>
+            </div>
+        </footer>`
+    };
+
+    // ===== PERSISTENCE FUNCTIONS (Builder Projects) =====
+    // Manages saving/loading builder projects from localStorage
+    // This is independent from the Showcase Gallery which uses projects-manifest.json
+    
+    function saveState() {
+        // Save current canvas content to current page
+        if (currentPageId) {
+            pages[currentPageId].content = canvas.innerHTML;
+            saveProjectState();
+        }
+    }
+
+    function attachClickHandlers(wrapper) {
+        wrapper.onclick = (e) => handleWrapperClick(e, wrapper);
+        wrapper.querySelectorAll('[contenteditable]').forEach(el => {
+            el.onblur = saveState;
+        });
+        wrapper.querySelectorAll('*').forEach(el => {
+            if (!el.classList.contains('section-wrapper') && el.tagName !== 'SECTION' && el.tagName !== 'DIV' && el !== wrapper && el.parentElement !== wrapper) {
+                el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+            }
+        });
+    }
+
+    function loadLocalState() {
+        // Load all projects
+        const savedProjects = localStorage.getItem('pageBuilderProjects');
+        if (savedProjects) {
+            projects = JSON.parse(savedProjects);
+        }
+        
+        // Load current project or create default
+        let savedProjectId = localStorage.getItem('currentProjectId');
+        if (savedProjectId && projects[savedProjectId]) {
+            currentProjectId = savedProjectId;
+        } else {
+            const projectIds = Object.keys(projects);
+            if (projectIds.length > 0) {
+                currentProjectId = projectIds[0];
+            } else {
+                // Create default project
+                projectCounter++;
+                const projectId = 'proj-' + projectCounter;
+                projects[projectId] = {
+                    id: projectId,
+                    name: 'My First Project',
+                    description: '',
+                    createdDate: new Date().toISOString(),
+                    pages: {},
+                    localFiles: {}
+                };
+                currentProjectId = projectId;
+                localStorage.setItem('pageBuilderProjects', JSON.stringify(projects));
+                localStorage.setItem('currentProjectId', currentProjectId);
+            }
+        }
+        
+        refreshProjectSelector();
+        loadProject(currentProjectId);
+    }
+    
+    function saveProjectState() {
+        if (currentProjectId && projects[currentProjectId]) {
+            projects[currentProjectId].pages = pages;
+            projects[currentProjectId].localFiles = localFiles;
+            localStorage.setItem('pageBuilderProjects', JSON.stringify(projects));
+            localStorage.setItem('currentProjectId', currentProjectId);
+        }
+    }
+    
+    function loadProject(projectId) {
+        if (projectId && projects[projectId]) {
+            currentProjectId = projectId;
+            const project = projects[projectId];
+            pages = project.pages || {};
+            localFiles = project.localFiles || {};
+            
+            canvas.innerHTML = '';
+            currentPageId = null;
+            
+            const pageIds = Object.keys(pages);
+            if (pageIds.length > 0) {
+                loadPage(pageIds[0]);
+            } else {
+                createNewPage();
+            }
+            
+            refreshProjectSelector();
+        }
+    }
+    
+    function createProject(projectName) {
+        let name = projectName;
+        if (!name) {
+            const inputName = document.getElementById('projectNameInput').value.trim();
+            const inputDesc = document.getElementById('projectDescInput').value.trim();
+            
+            if (!inputName) {
+                alert('Please enter a project name');
+                return;
+            }
+            name = inputName;
+            
+            try {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createProjectModal'));
+                if (modal) modal.hide();
+            } catch (e) {}
+        }
+        
+        projectCounter++;
+        const projectId = 'proj-' + projectCounter;
+        projects[projectId] = {
+            id: projectId,
+            name: name,
+            description: document.getElementById('projectDescInput')?.value.trim() || '',
+            createdDate: new Date().toISOString(),
+            pages: {},
+            localFiles: {}
+        };
+        
+        currentProjectId = projectId;
+        pages = {};
+        localFiles = {};
+        
+        // Create first page in new project
+        pageCounter = 0;
+        createNewPage();
+        
+        saveProjectState();
+        refreshProjectSelector();
+        
+        // Clear form inputs
+        document.getElementById('projectNameInput').value = '';
+        document.getElementById('projectDescInput').value = '';
+    }
+    
+    function switchProject(projectId) {
+        if (projectId && projects[projectId]) {
+            saveProjectState();
+            loadProject(projectId);
+            closeInspector();
+        }
+    }
+    
+    function deleteProject(projectId) {
+        if (Object.keys(projects).length === 1) {
+            alert('You must have at least one project!');
+            return;
+        }
+        
+        if (confirm(`Delete project \"${projects[projectId].name}\"? This cannot be undone.`)) {
+            delete projects[projectId];
+            
+            if (currentProjectId === projectId) {
+                const projectIds = Object.keys(projects);
+                currentProjectId = projectIds[0];
+                loadProject(currentProjectId);
+            }
+            
+            saveProjectState();
+            refreshProjectSelector();
+            refreshProjectsDashboard();
+        }
+    }
+    
+    function renameProject(projectId) {
+        const newName = prompt('Enter new project name:', projects[projectId].name);
+        if (newName && newName.trim()) {
+            projects[projectId].name = newName.trim();
+            saveProjectState();
+            refreshProjectSelector();
+            refreshProjectsDashboard();
+        }
+    }
+    
+    function refreshProjectSelector() {
+        const selector = document.getElementById('projectSelector');
+        selector.innerHTML = '';
+        Object.keys(projects).forEach(projectId => {
+            const option = document.createElement('option');
+            option.value = projectId;
+            option.textContent = projects[projectId].name;
+            if (projectId === currentProjectId) {
+                option.selected = true;
+            }
+            selector.appendChild(option);
+        });
+    }
+    
+    function showCreateProjectModal() {
+        document.getElementById('projectNameInput').value = '';
+        document.getElementById('projectDescInput').value = '';
+        const modal = new bootstrap.Modal(document.getElementById('createProjectModal'));
+        modal.show();
+    }
+    
+    function showProjectsDashboard() {
+        refreshProjectsDashboard();
+        const modal = new bootstrap.Modal(document.getElementById('projectsDashboardModal'));
+        modal.show();
+    }
+    
+    function refreshProjectsDashboard() {
+        const gallery = document.getElementById('projectsGallery');
+        gallery.innerHTML = '';
+        
+        Object.keys(projects).forEach(projectId => {
+            const project = projects[projectId];
+            const pageCount = Object.keys(project.pages || {}).length;
+            const createdDate = new Date(project.createdDate).toLocaleDateString();
+            
+            const card = document.createElement('div');
+            card.className = 'col-md-6 col-lg-4';
+            card.innerHTML = `
+                <div class="card h-100 shadow-sm border-0 project-card" style="cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 120px; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                        🎨
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">${escapeHtml(project.name)}</h5>
+                        <p class="card-text text-muted small">${project.description ? escapeHtml(project.description) : 'No description'}</p>
+                        <div class="d-flex justify-content-between align-items-center text-muted mb-3" style="font-size: 0.85rem;">
+                            <span>📄 ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}</span>
+                            <span>${createdDate}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 pt-0">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-sm btn-primary" onclick="switchProjectAndCloseModal('${projectId}')">✏️ Open & Edit</button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="renameProject('${projectId}')">Rename</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteProject('${projectId}')">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            gallery.appendChild(card);
+        });
+    }
+    
+    function switchProjectAndCloseModal(projectId) {
+        switchProject(projectId);
+        try {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('projectsDashboardModal'));
+            if (modal) modal.hide();
+        } catch (e) {}
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function loadPage(pageId) {
+        if (pages[pageId]) {
+            currentPageId = pageId;
+            canvas.innerHTML = pages[pageId].content || '';
+            canvas.querySelectorAll('.section-wrapper').forEach(attachClickHandlers);
+            closeInspector();
+            refreshPagesList();
+        }
+    }
+    
+    function createNewPage() {
+        let pageName = prompt('Enter page name:', 'Page ' + (Object.keys(pages).length + 1));
+        if (!pageName || !pageName.trim()) {
+            pageName = 'Page ' + (Object.keys(pages).length + 1);
+        }
+        pageCounter++;
+        const pageId = 'page-' + pageCounter;
+        pages[pageId] = { name: pageName.trim(), content: '' };
+        currentPageId = pageId;
+        canvas.innerHTML = '';
+        closeInspector();
+        saveState();
+        refreshPagesList();
+    }
+    
+    function renamePage(pageId) {
+        const newName = prompt('Enter new page name:', pages[pageId].name);
+        if (newName && newName.trim()) {
+            pages[pageId].name = newName.trim();
+            saveState();
+            refreshPagesList();
+        }
+    }
+    
+    function deletePage(pageId) {
+        if (Object.keys(pages).length === 1) {
+            alert('You must have at least one page!');
+            return;
+        }
+        if (confirm('Are you sure you want to delete this page?')) {
+            delete pages[pageId];
+            const pageIds = Object.keys(pages);
+            currentPageId = pageIds[0];
+            loadPage(currentPageId);
+            saveState();
+        }
+    }
+    
+    function refreshPagesList() {
+        const pagesList = document.getElementById('pagesList');
+        pagesList.innerHTML = '';
+        Object.keys(pages).forEach(pageId => {
+            const page = pages[pageId];
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm w-100 mb-2 ' + (currentPageId === pageId ? 'btn-primary' : 'btn-outline-light');
+            btn.textContent = page.name;
+            btn.style.textAlign = 'left';
+            btn.ondblclick = () => renamePage(pageId);
+            btn.onclick = () => loadPage(pageId);
+            pagesList.appendChild(btn);
+        });
+    }
+    
+    window.onload = loadLocalState;
+    // ===== END PERSISTENCE FUNCTIONS =====
+
+    // Centralized click handler for section wrappers to distinguish between section and element clicks
+    function handleWrapperClick(e, wrapper) {
+        e.stopPropagation(); // Prevent deselect from being called on canvas click
+        // If a child element was clicked, try to select it, otherwise select the section
+        if (e.target !== wrapper && e.target.closest('.section-wrapper') === wrapper && e.target.tagName !== 'SECTION') {
+            // If the clicked element is not the wrapper itself, and it's inside, select it
+            selectElement(e.target);
+        } else {
+            selectSection(wrapper);
+        }
+    }
+
+    function addSection(type) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'section-wrapper';
+        wrapper.dataset.type = type;
+        wrapper.innerHTML = `\n            ${templates[type]}`;
+
+        canvas.appendChild(wrapper);
+        attachClickHandlers(wrapper);
+        saveState();
+        selectSection(wrapper);
+    }
+
+    function selectSection(wrapper) {
+        if (activeWrapper) activeWrapper.classList.remove('active');
+        if (selectedElement) {
+            selectedElement.classList.remove('selected-element-highlight');
+            selectedElement = null;
+        }
+
+        activeWrapper = wrapper;
+        activeWrapper.classList.add('active');
+        inspector.style.display = 'block';
+        elementInspectorDiv.style.display = 'none';
+        formElementPropertiesDiv.style.display = 'none';
+        document.getElementById('form-settings-properties').style.display = 'none';
+        document.getElementById('heroSettingsContainer').style.display = 'none';
+        document.getElementById('formSettingsContainer').style.display = 'none';
+
+        // Show/hide section-specific controls based on type
+        const sectionType = wrapper.dataset.type;
+        formElementCreator.style.display = sectionType === 'form' ? 'block' : 'none';
+        cardButton.style.display = sectionType === 'cards' ? 'block' : 'none';
+        galleryItemButton.style.display = sectionType === 'gallery' ? 'block' : 'none';
+        pricingCardButton.style.display = sectionType === 'pricing' ? 'block' : 'none';
+        testimonialCardButton.style.display = sectionType === 'testimonials' ? 'block' : 'none';
+        statItemButton.style.display = sectionType === 'stats' ? 'block' : 'none';
+        
+        // Show hero background image controls for hero section
+        if (sectionType === 'hero') {
+            document.getElementById('heroSettingsContainer').style.display = 'block';
+            const target = wrapper.querySelector('section');
+            const bgImageMatch = target.style.backgroundImage.match(/url\('([^']+)'\)/);
+            document.getElementById('heroBackgroundUrl').value = bgImageMatch ? bgImageMatch[1] : '';
+        }
+        
+        // Show form settings for form section
+        if (sectionType === 'form') {
+            document.getElementById('formSettingsContainer').style.display = 'block';
+            const form = wrapper.querySelector('form');
+            document.getElementById('formMethod').value = form.getAttribute('method') || 'GET';
+            document.getElementById('formAction').value = form.getAttribute('action') || '';
+            document.getElementById('formEnctype').value = form.getAttribute('enctype') || 'application/x-www-form-urlencoded';
+        }
+
+        const target = wrapper.querySelector('section, footer');
+        const styles = window.getComputedStyle(target);
+        document.getElementById('bgColor').value = rgbToHex(styles.backgroundColor);
+        document.getElementById('textColor').value = rgbToHex(styles.color);
+        const currentPadding = target.className.match(/py-(\d)/);
+        document.getElementById('paddingRange').value = currentPadding ? currentPadding[1] : 3;
+    }
+
+    function selectElement(element) {
+        // Don't select the wrapper or section itself as an element
+        if (element.classList.contains('section-wrapper') || element.tagName === 'SECTION' || element.tagName === 'BODY' || element.tagName === 'HTML' || element === canvas || element === document.getElementById('canvas-container')) {
+            return;
+        }
+
+        // Ensure the element is within an activeWrapper before selecting it
+        const closestWrapper = element.closest('.section-wrapper');
+        if (!closestWrapper || closestWrapper !== activeWrapper) {
+            selectSection(closestWrapper || null); // Select the parent section if not already active
+            if (!closestWrapper) return; // If no wrapper, nothing to select
+        }
+
+        if (selectedElement) {
+            selectedElement.classList.remove('selected-element-highlight');
+        }
+        selectedElement = element;
+        selectedElement.classList.add('selected-element-highlight');
+        inspector.style.display = 'block';
+        populateElementInspector();
+
+        // If an editable element is clicked, attach a blur listener to save state when editing stops
+        if (element.hasAttribute('contenteditable')) {
+            element.onblur = saveState;
+        }
+    }
+
+    function selectParentCard() {
+        if (selectedElement) {
+            const parentCard = selectedElement.closest('.card');
+            if (parentCard) {
+                // Select the card wrapper (col-md-4 or col-md-3 div)
+                const cardWrapper = parentCard.closest('[class*="col-"]');
+                if (cardWrapper) {
+                    selectElement(cardWrapper);
+                }
+            }
+        }
+    }
+
+    function populateElementInspector() {
+        const elementInspectorDiv = document.getElementById('element-inspector');
+        const formElementPropertiesDiv = document.getElementById('form-element-properties');
+        const formSettingsPropertiesDiv = document.getElementById('form-settings-properties');
+        const selectParentCardBtn = document.getElementById('selectParentCardBtn');
+        const duplicateElementBtn = document.getElementById('duplicateElementBtn');
+        const bgColorContainer = document.getElementById('elementBgColorContainer');
+        const textColorContainer = document.getElementById('elementTextColorContainer');
+        const bgImageContainer = document.getElementById('elementBgImageContainer');
+        
+        if (!selectedElement) {
+            elementInspectorDiv.style.display = 'none';
+            formElementPropertiesDiv.style.display = 'none';
+            formSettingsPropertiesDiv.style.display = 'none';
+            selectParentCardBtn.style.display = 'none';
+            duplicateElementBtn.style.display = 'none';
+            bgColorContainer.style.display = 'none';
+            textColorContainer.style.display = 'none';
+            bgImageContainer.style.display = 'none';
+            return;
+        }
+
+        // Check if selectedElement is inside a card
+        const parentCard = selectedElement.closest('.card');
+        selectParentCardBtn.style.display = parentCard ? 'block' : 'none';
+        
+        // Show duplicate button for all elements that can be duplicated
+        duplicateElementBtn.style.display = 'block';
+
+        // Hide section form settings and form element property fields initially
+        formSettingsPropertiesDiv.style.display = 'none';
+        formElementPropertiesDiv.style.display = 'none';
+        hideFormFieldContainers();
+
+        // Show/hide styling controls based on element type
+        const isBlockElement = ['DIV', 'SECTION', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'BUTTON', 'A', 'LABEL'].includes(selectedElement.tagName);
+        const isTextElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'DIV', 'LABEL', 'BUTTON'].includes(selectedElement.tagName);
+        
+        // Show background color for block elements (except images)
+        bgColorContainer.style.display = (isBlockElement && selectedElement.tagName !== 'IMG') ? 'block' : 'none';
+        if (bgColorContainer.style.display === 'block') {
+            document.getElementById('elementBgColor').value = rgbToHex(window.getComputedStyle(selectedElement).backgroundColor);
+        }
+        
+        // Show text color for text elements
+        textColorContainer.style.display = isTextElement ? 'block' : 'none';
+        if (textColorContainer.style.display === 'block') {
+            document.getElementById('elementTextColor').value = rgbToHex(window.getComputedStyle(selectedElement).color);
+        }
+        
+        // Show background image for most elements except images
+        bgImageContainer.style.display = (selectedElement.tagName !== 'IMG') ? 'block' : 'none';
+        if (bgImageContainer.style.display === 'block') {
+            const bgImage = window.getComputedStyle(selectedElement).backgroundImage;
+            const urlMatch = bgImage.match(/url\((['"]?)(.+?)\1\)/);
+            document.getElementById('elementBgImage').value = urlMatch ? urlMatch[2] : '';
+        }
+
+        // Hide/show text formatting controls
+        const fontSizeContainer = document.getElementById('elementFontSizeContainer');
+        const textAlignContainer = document.getElementById('elementTextAlignContainer');
+        const isTextElement2 = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'DIV', 'LABEL', 'BUTTON'].includes(selectedElement.tagName);
+        
+        fontSizeContainer.style.display = isTextElement ? 'block' : 'none';
+        textAlignContainer.style.display = isTextElement ? 'block' : 'none';
+        
+        if (isTextElement) {
+            const computedStyle = window.getComputedStyle(selectedElement);
+            const fontSize = computedStyle.fontSize.replace('px', '');
+            document.getElementById('elementFontSize').value = fontSize;
+        }
+
+        // General element properties
+        document.getElementById('elementId').value = selectedElement.id;
+        document.getElementById('elementClass').value = selectedElement.className;
+
+        const srcContainer = document.getElementById('elementSrcContainer');
+        const hrefContainer = document.getElementById('elementHrefContainer');
+        const textContentContainer = document.getElementById('elementTextContentContainer');
+
+        // Reset visibility
+        srcContainer.style.display = 'none';
+        hrefContainer.style.display = 'none';
+        textContentContainer.style.display = 'none';
+
+        if (selectedElement.tagName === 'IMG') {
+            srcContainer.style.display = 'block';
+            document.getElementById('elementSrc').value = selectedElement.src;
+        } else if (selectedElement.tagName === 'A') {
+            hrefContainer.style.display = 'block';
+            document.getElementById('elementHref').value = selectedElement.href;
+            textContentContainer.style.display = 'block';
+            document.getElementById('elementTextContent').value = selectedElement.textContent;
+        } else if (selectedElement.hasAttribute('contenteditable')) {
+            textContentContainer.style.display = 'block';
+            document.getElementById('elementTextContent').value = selectedElement.innerHTML; // Use innerHTML for rich contenteditable
+        }
+
+        // Make sure textContent is always editable if the element itself is editable
+        if (selectedElement.hasAttribute('contenteditable')) {
+            textContentContainer.style.display = 'block';
+            document.getElementById('elementTextContent').value = selectedElement.innerHTML;
+        } else if (!srcContainer.style.display === 'block' && !hrefContainer.style.display === 'block') {
+            // If it's not an image or link, but has text, allow editing
+            if (selectedElement.children.length === 0 && selectedElement.textContent.trim().length > 0) {
+                 textContentContainer.style.display = 'block';
+                 document.getElementById('elementTextContent').value = selectedElement.textContent;
+            }
+        }
+
+        // Form element specific properties - ONLY for form elements inside forms, not design buttons
+        const isInForm = selectedElement.closest('form') !== null;
+        if ((selectedElement.tagName === 'INPUT' || selectedElement.tagName === 'TEXTAREA' || selectedElement.tagName === 'SELECT' || selectedElement.tagName === 'LABEL') && isInForm) {
+            formElementPropertiesDiv.style.display = 'block';
+            document.getElementById('formElementName').parentElement.style.display = 'block';
+            document.getElementById('formElementName').value = selectedElement.name || '';
+
+            if (selectedElement.tagName === 'INPUT') {
+                document.getElementById('formElementTypeContainer').style.display = 'block';
+                document.getElementById('formElementType').value = selectedElement.type || 'text';
+
+                if (selectedElement.type === 'text' || selectedElement.type === 'email' || selectedElement.type === 'password' || selectedElement.type === 'number') {
+                    document.getElementById('formElementPlaceholderContainer').style.display = 'block';
+                    document.getElementById('formElementPlaceholder').value = selectedElement.placeholder || '';
+                    document.getElementById('formElementValueContainer').style.display = 'block';
+                    document.getElementById('formElementValue').value = selectedElement.value || '';
+                } else if (selectedElement.type === 'checkbox' || selectedElement.type === 'radio') {
+                    document.getElementById('formElementValueContainer').style.display = 'block';
+                    document.getElementById('formElementValue').value = selectedElement.value || '';
+                    document.getElementById('formElementCheckedContainer').style.display = 'block';
+                    document.getElementById('formElementChecked').checked = selectedElement.checked;
+                }
+            } else if (selectedElement.tagName === 'TEXTAREA') {
+                document.getElementById('formElementPlaceholderContainer').style.display = 'block';
+                document.getElementById('formElementPlaceholder').value = selectedElement.placeholder || '';
+            } else if (selectedElement.tagName === 'LABEL') {
+                document.getElementById('formElementForContainer').style.display = 'block';
+                document.getElementById('formElementFor').value = selectedElement.htmlFor || '';
+            }
+
+            // Also manage text content for editable form elements
+            if (selectedElement.hasAttribute('contenteditable') || selectedElement.tagName === 'BUTTON' || selectedElement.tagName === 'LABEL' || selectedElement.tagName === 'OPTION') {
+                textContentContainer.style.display = 'block';
+                document.getElementById('elementTextContent').value = selectedElement.innerHTML; // Use innerHTML for rich contenteditable and general text
+            }
+        }
+
+        // Ensure general element inspector is hidden if a form element is selected with its specific properties
+        if (formElementPropertiesDiv.style.display === 'block') {
+            elementInspectorDiv.style.display = 'none';
+        } else {
+            elementInspectorDiv.style.display = 'block';
+        }
+    }
+
+    function updateElementAttribute(attributeName, value) {
+        if (selectedElement) {
+            if (attributeName === 'className') {
+                selectedElement.className = value; // Special handling for class
+            } else if (attributeName === 'checked') {
+                selectedElement.checked = value;
+            } else if (attributeName === 'for') {
+                selectedElement.htmlFor = value; // Special handling for 'for' attribute of labels
+            } else {
+                selectedElement.setAttribute(attributeName, value);
+            }
+            saveState();
+        }
+    }
+
+    function updateElementText(value) {
+        if (selectedElement) {
+            if (selectedElement.hasAttribute('contenteditable') || selectedElement.tagName === 'BUTTON' || selectedElement.tagName === 'LABEL' || selectedElement.tagName === 'OPTION') {
+                selectedElement.innerHTML = value;
+            } else if (selectedElement.children.length === 0) { // For non-contenteditable elements with direct text
+                selectedElement.textContent = value;
+            }
+            saveState();
+        }
+    }
+
+    function updateElementStyle(prop, val) {
+        if (selectedElement) {
+            selectedElement.style[prop] = val;
+            saveState();
+        }
+    }
+
+    function updateSelectedElementStyle(prop, val) {
+        if (!selectedElement) return;
+        selectedElement.style[prop] = val;
+        // Update inspector input if it exists
+        if (prop === 'backgroundColor') {
+            document.getElementById('elementBgColor').value = rgbToHex(selectedElement.style.backgroundColor);
+        } else if (prop === 'color') {
+            document.getElementById('elementTextColor').value = rgbToHex(selectedElement.style.color);
+        } else if (prop === 'backgroundImage') {
+            const urlMatch = val.match(/url\((['"]?)(.+?)\1\)/);
+            if (urlMatch) {
+                document.getElementById('elementBgImage').value = urlMatch[2];
+            }
+        }
+        saveState();
+    }
+
+    function moveSelectedElement(direction) {
+        if (!selectedElement || !activeWrapper) return;
+        
+        const parent = selectedElement.parentElement;
+        const siblings = Array.from(parent.children);
+        const currentIndex = siblings.indexOf(selectedElement);
+        
+        if (direction === 'up' && currentIndex > 0) {
+            parent.insertBefore(selectedElement, siblings[currentIndex - 1]);
+            saveState();
+        } else if (direction === 'down' && currentIndex < siblings.length - 1) {
+            parent.insertBefore(selectedElement, siblings[currentIndex + 2]);
+            saveState();
+        } else if (direction === 'left') {
+            // For left movement in grids, swap with previous sibling
+            if (currentIndex > 0) {
+                parent.insertBefore(selectedElement, siblings[currentIndex - 1]);
+                saveState();
+            }
+        } else if (direction === 'right') {
+            // For right movement in grids, swap with next sibling
+            if (currentIndex < siblings.length - 1) {
+                parent.insertBefore(selectedElement, siblings[currentIndex + 2]);
+                saveState();
+            }
+        }
+    }
+
+    function removeBootstrapClasses(el, type) {
+        const classMap = {
+            bg: ['bg-dark', 'bg-light', 'bg-primary', 'bg-secondary', 'bg-white'],
+            text: ['text-white', 'text-dark', 'text-muted', 'text-black']
+        };
+        (classMap[type] || []).forEach(cls => el.classList.remove(cls));
+    }
+
+    function hideFormFieldContainers() {
+        const containerIds = ['formElementName', 'formElementPlaceholderContainer', 'formElementValueContainer', 'formElementForContainer', 'formElementTypeContainer', 'formElementCheckedContainer'];
+        containerIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+            else if (id === 'formElementName') document.getElementById('formElementName').parentElement.style.display = 'none';
+        });
+    }
+
+    function updateStyle(prop, val) {
+        if(!activeWrapper) return;
+        const target = activeWrapper.querySelector('section, footer');
+        if(prop === 'backgroundColor') removeBootstrapClasses(target, 'bg');
+        if(prop === 'color') removeBootstrapClasses(target, 'text');
+        target.style[prop] = val;
+        saveState();
+    }
+
+    function updateHeroBackgroundImage(url) {
+        if(!activeWrapper || activeWrapper.dataset.type !== 'hero') return;
+        const target = activeWrapper.querySelector('section');
+        // Parse existing gradient and replace image URL
+        const gradientMatch = target.style.backgroundImage.match(/(linear-gradient\([^,]+,[^)]+\)),\s*url\([^)]+\)/);
+        if (gradientMatch) {
+            target.style.backgroundImage = `${gradientMatch[1]}, url('${url}')`;
+        } else {
+            target.style.backgroundImage = `url('${url}')`;
+        }
+        saveState();
+    }
+
+    function updateFormAttribute(attributeName, value) {
+        if(!activeWrapper || activeWrapper.dataset.type !== 'form') return;
+        const form = activeWrapper.querySelector('form');
+        if (form) {
+            form.setAttribute(attributeName, value);
+            // Update the input fields to reflect changes
+            if (attributeName === 'method') document.getElementById('sectionFormMethod').value = value;
+            if (attributeName === 'action') document.getElementById('sectionFormAction').value = value;
+            if (attributeName === 'enctype') document.getElementById('sectionFormEnctype').value = value;
+            saveState();
+        }
+    }
+
+    function updatePadding(val) {
+        const el = activeWrapper.querySelector('section, footer');
+        el.className = el.className.replace(/py-\d/, 'py-' + val);
+        saveState();
+    }
+
+    function addElement(type) {
+        if (!activeWrapper) return;
+        
+        let container;
+        
+        // Check if selectedElement is inside a card - if so, add elements to the card's body
+        let cardBody = null;
+        if (selectedElement) {
+            const card = selectedElement.closest('.card');
+            if (card) {
+                cardBody = card.querySelector('.card-body');
+            }
+        }
+        
+        if (cardBody) {
+            // Add element inside the card body if we're inside a card
+            container = cardBody;
+        } else if (type === 'card' && activeWrapper.dataset.type === 'cards') {
+            container = activeWrapper.querySelector('.row');
+        } else if (type === 'gallery-item' && activeWrapper.dataset.type === 'gallery') {
+            container = activeWrapper.querySelector('.gallery-row');
+        } else {
+            container = activeWrapper.querySelector('.container') || activeWrapper.querySelector('section, footer');
+        }
+        if (!container) return;
+
+        let html = '';
+        switch(type) {
+            case 'heading':
+                html = `<h3 contenteditable="true" class="mb-4">New Heading</h3>`;
+                break;
+            case 'paragraph':
+                html = `<p contenteditable="true" class="mb-4">New paragraph text. Click to edit.</p>`;
+                break;
+            case 'image':
+                const id = Math.floor(Math.random() * 200) + 10;
+                html = `<img src="https://picsum.photos/id/${id}/400/250" class="img-fluid rounded shadow-sm my-3" alt="New Image">`;
+                break;
+            case 'button':
+                html = `<button class="btn btn-primary my-3">Call to Action</button>`;
+                break;
+            case 'link':
+                html = `<a href="#" class="d-block my-3">Clickable Link</a>`;
+                break;
+            case 'card':
+                html = `<div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 contenteditable="true">Feature</h5>
+                            <p contenteditable="true">Description.</p>
+                        </div>
+                    </div>
+                </div>`;
+                break;
+            case 'gallery-item':
+                html = `<div class="col-12 col-md-6 gallery-item">
+                    <div class="row align-items-center g-3">
+                        <div class="col-md-5">
+                            <img src="https://picsum.photos/id/${Math.floor(Math.random() * 200) + 10}/600/400" class="img-fluid rounded shadow-sm clickable-img" style="cursor:pointer;" onclick="selectElement(this, event)">
+                        </div>
+                        <div class="col-md-7">
+                            <h5 contenteditable="true">Gallery Image</h5>
+                            <p contenteditable="true" class="text-muted mb-0">Beautiful photo with description.</p>
+                        </div>
+                    </div>
+                </div>`;
+                break;
+        }
+
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const newElement = temp.firstElementChild;
+        container.appendChild(newElement);
+
+        // Make newly added elements clickable for selection
+        newElement.onclick = (e) => { e.stopPropagation(); selectElement(newElement); };
+        if (newElement.hasAttribute('contenteditable')) {
+            newElement.onblur = saveState;
+        }
+
+        saveState();
+        selectElement(newElement); // Select the newly added element
+    }
+
+    function addPricingCard() {
+        if (!activeWrapper || activeWrapper.dataset.type !== 'pricing') return;
+        const container = activeWrapper.querySelector('.row');
+        if (!container) return;
+
+        const html = `<div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 contenteditable="true">Plan Name</h5>
+                    <h3 contenteditable="true">$99</h3>
+                    <p contenteditable="true">per month</p>
+                    <ul class="list-unstyled" style="text-align: left;">
+                        <li contenteditable="true">✓ Feature 1</li>
+                        <li contenteditable="true">✓ Feature 2</li>
+                    </ul>
+                    <button class="btn btn-primary w-100 mt-3">Get Started</button>
+                </div>
+            </div>
+        </div>`;
+
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const newElement = temp.firstElementChild;
+        container.appendChild(newElement);
+
+        // Make newly added card clickable and its elements selectable
+        newElement.querySelectorAll('*').forEach(el => {
+            if (!el.classList.contains('card') && el.tagName !== 'DIV') {
+                el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+            }
+        });
+        newElement.onclick = (e) => { e.stopPropagation(); selectElement(newElement); };
+
+        saveState();
+        selectElement(newElement);
+    }
+
+    function addTestimonialCard() {
+        if (!activeWrapper || activeWrapper.dataset.type !== 'testimonials') return;
+        const container = activeWrapper.querySelector('.row');
+        if (!container) return;
+
+        const html = `<div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="card-text" contenteditable="true">"Amazing product! Highly recommended."</p>
+                    <footer class="blockquote-footer" contenteditable="true">Client Name</footer>
+                </div>
+            </div>
+        </div>`;
+
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const newElement = temp.firstElementChild;
+        container.appendChild(newElement);
+
+        // Make newly added card clickable and its elements selectable
+        newElement.querySelectorAll('*').forEach(el => {
+            if (!el.classList.contains('card') && el.tagName !== 'DIV') {
+                el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+            }
+        });
+        newElement.onclick = (e) => { e.stopPropagation(); selectElement(newElement); };
+
+        saveState();
+        selectElement(newElement);
+    }
+
+    function addStatItem() {
+        if (!activeWrapper || activeWrapper.dataset.type !== 'stats') return;
+        const container = activeWrapper.querySelector('.row');
+        if (!container) return;
+
+        const html = `<div class="col-md-3">
+            <h3 class="display-6" contenteditable="true">50+</h3>
+            <p contenteditable="true">Happy Customers</p>
+        </div>`;
+
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const newElement = temp.firstElementChild;
+        container.appendChild(newElement);
+
+        // Make newly added stat clickable and its elements selectable
+        newElement.querySelectorAll('*').forEach(el => {
+            if (el.tagName !== 'DIV') {
+                el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+            }
+        });
+        newElement.onclick = (e) => { e.stopPropagation(); selectElement(newElement); };
+
+        saveState();
+        selectElement(newElement);
+    }
+
+    function deleteActiveSection() {
+        if (activeWrapper) {
+            activeWrapper.remove();
+            closeInspector();
+            saveState();
+        }
+    }
+
+    function moveSection(direction) {
+        if (!activeWrapper) return;
+        const wrapper = activeWrapper;
+        if (direction === 'up' && wrapper.previousElementSibling) {
+            wrapper.parentNode.insertBefore(wrapper, wrapper.previousElementSibling);
+        } else if (direction === 'down' && wrapper.nextElementSibling) {
+            wrapper.parentNode.insertBefore(wrapper.nextElementSibling, wrapper);
+        }
+        saveState();
+    }
+
+    function duplicateSection() {
+        if (!activeWrapper) return;
+        const clone = activeWrapper.cloneNode(true);
+        activeWrapper.parentNode.insertBefore(clone, activeWrapper.nextSibling);
+        attachClickHandlers(clone);
+        saveState();
+        selectSection(clone);
+    }
+
+    function deleteSelectedElement() {
+        if (selectedElement && activeWrapper && activeWrapper.contains(selectedElement)) {
+            const parent = selectedElement.parentElement;
+            selectedElement.remove();
+            selectedElement = null;
+            // Try to re-select the parent if it's still there
+            if (parent && activeWrapper.contains(parent)) {
+                selectElement(parent); // Select parent of deleted element
+            } else {
+                populateElementInspector(); // Clear inspector
+            }
+            saveState();
+        }
+    }
+
+    function duplicateSelectedElement() {
+        if (!selectedElement || !activeWrapper || !activeWrapper.contains(selectedElement)) return;
+        
+        // Clone the selected element
+        const clone = selectedElement.cloneNode(true);
+        
+        // Remove any ID to avoid duplicates (but keep classes)
+        clone.id = '';
+        
+        // Clear any highlights
+        clone.classList.remove('selected-element-highlight');
+        
+        // Insert the clone after the original element
+        selectedElement.parentNode.insertBefore(clone, selectedElement.nextSibling);
+        
+        // Attach click handlers to the cloned element
+        clone.onclick = (e) => { e.stopPropagation(); selectElement(clone); };
+        
+        // If the clone has contenteditable, attach blur listener
+        if (clone.hasAttribute('contenteditable')) {
+            clone.onblur = saveState;
+        }
+        
+        // Recursively attach handlers to cloned children
+        clone.querySelectorAll('*').forEach(el => {
+            if (el.hasAttribute('contenteditable')) {
+                el.onblur = saveState;
+            }
+            if (!el.classList.contains('section-wrapper') && !el.classList.contains('card') && el.tagName !== 'SECTION' && el.tagName !== 'DIV') {
+                el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+            }
+        });
+        
+        saveState();
+        selectElement(clone);
+    }
+
+    function addFormElement(type) {
+        if (!activeWrapper || activeWrapper.dataset.type !== 'form') return;
+
+        // Find the innermost container within the form section
+        const formContainer = activeWrapper.querySelector('form') || activeWrapper.querySelector('.container') || activeWrapper.querySelector('section, footer');
+        if (!formContainer) return;
+
+        let elementHtml = '';
+        const uniqueId = 'input-' + Date.now(); // Generate a unique ID
+
+        switch(type) {
+            case 'text':
+            case 'email':
+            case 'password':
+                elementHtml = `
+                    <div class="mb-3">
+                        <label for="${uniqueId}" class="form-label" contenteditable="true">${type.charAt(0).toUpperCase() + type.slice(1)}</label>
+                        <input type="${type}" class="form-control" id="${uniqueId}" name="${uniqueId}" placeholder="Enter ${type}">
+                    </div>`;
+                break;
+            case 'textarea':
+                elementHtml = `
+                    <div class="mb-3">
+                        <label for="${uniqueId}" class="form-label" contenteditable="true">Message</label>
+                        <textarea class="form-control" id="${uniqueId}" name="${uniqueId}" rows="3" placeholder="Your message"></textarea>
+                    </div>`;
+                break;
+            case 'select':
+                elementHtml = `
+                    <div class="mb-3">
+                        <label for="${uniqueId}" class="form-label" contenteditable="true">Select Option</label>
+                        <select class="form-select" id="${uniqueId}" name="${uniqueId}">
+                            <option value="option1" contenteditable="true">Option 1</option>
+                            <option value="option2" contenteditable="true">Option 2</option>
+                        </select>
+                    </div>`;
+                break;
+            case 'checkbox':
+                elementHtml = `
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="${uniqueId}" name="${uniqueId}">
+                        <label class="form-check-label" for="${uniqueId}" contenteditable="true">Check me out</label>
+                    </div>`;
+                break;
+            case 'radio':
+                const radioGroupName = 'radio-group-' + Date.now();
+                elementHtml = `
+                    <div class="mb-3">
+                        <label class="form-label" contenteditable="true">Radio Group Title</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="${radioGroupName}" id="${uniqueId}-1" value="option1">
+                            <label class="form-check-label" for="${uniqueId}-1" contenteditable="true">Radio Option 1</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="${radioGroupName}" id="${uniqueId}-2" value="option2">
+                            <label class="form-check-label" for="${uniqueId}-2" contenteditable="true">Radio Option 2</label>
+                        </div>
+                    </div>`;
+                break;
+            case 'submit':
+                elementHtml = `<button type="submit" class="btn btn-primary my-3">Submit</button>`;
+                break;
+            case 'label':
+                 elementHtml = `<label for="" class="form-label my-2" contenteditable="true">New Label</label>`;
+                 break;
+        }
+
+        if (elementHtml) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = elementHtml.trim();
+            const newElement = tempDiv.firstElementChild;
+
+            formContainer.appendChild(newElement);
+
+            // Make newly added elements clickable for selection
+            // If the element is a container (like mb-3 for text input), make its direct children clickable
+            if (newElement.classList.contains('mb-3')) {
+                newElement.querySelectorAll('input, textarea, select, label, button').forEach(el => {
+                    el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+                    if (el.hasAttribute('contenteditable')) el.onblur = saveState;
+                });
+            } else if (newElement.tagName === 'BUTTON') {
+                 // For button elements, explicitly attach click handler
+                 newElement.onclick = (e) => { e.stopPropagation(); selectElement(newElement); };
+            } else {
+                 newElement.onclick = (e) => { e.stopPropagation(); selectElement(newElement); };
+                 if (newElement.hasAttribute('contenteditable')) newElement.onblur = saveState;
+            }
+
+            saveState();
+            selectElement(newElement); // Select the newly added element
+        }
+    }
+
+    function closeInspector() {
+        inspector.style.display = 'none';
+        if(activeWrapper) activeWrapper.classList.remove('active');
+        if(selectedElement) selectedElement.classList.remove('selected-element-highlight');
+        activeWrapper = null;
+        selectedElement = null;
+        document.getElementById('element-inspector').style.display = 'none'; // Ensure element inspector is hidden
+    }
+
+    function deselect(e) {
+        // Only deselect everything if click is directly on canvas or canvas-container
+        if(e.target === canvas || e.target === document.getElementById('canvas-container')) {
+            closeInspector();
+            saveState(); // Save state when deselecting everything
+        } else if (e.target.hasAttribute('contenteditable')) {
+            // If an editable element is clicked, attach a blur listener to save state when editing stops
+            e.target.onblur = saveState;
+        }
+    }
+
+    function clearCurrentPage() {
+        if (confirm('Clear all content on this page?')) {
+            canvas.innerHTML = '';
+            if (currentPageId && pages[currentPageId]) {
+                pages[currentPageId].content = '';
+            }
+            closeInspector();
+            saveState();
+        }
+    }
+
+    function clearAllData() {
+        const confirmMessage = `⚠️ WARNING: This will permanently delete ALL saved projects and data!\n\nAre you sure? This cannot be undone.\n\nType 'YES' to confirm:`;
+        const userInput = prompt(confirmMessage);
+        
+        if (userInput === 'YES') {
+            // Clear localStorage
+            localStorage.removeItem('pageBuilderProjects');
+            localStorage.removeItem('currentProjectId');
+            
+            // Reset all variables
+            projects = {};
+            pages = {};
+            localFiles = {};
+            currentProjectId = null;
+            currentPageId = null;
+            projectCounter = 0;
+            pageCounter = 0;
+            
+            // Clear canvas
+            canvas.innerHTML = '';
+            
+            // Close inspector
+            closeInspector();
+            
+            // Refresh UI
+            refreshProjectSelector();
+            refreshPagesList();
+            
+            alert('✓ All data has been cleared. Creating default project...');
+            
+            // Create a new default project
+            loadLocalState();
+        } else if (userInput !== null) {
+            alert('Cancelled. Data was not cleared.');
+        }
+    }
+
+    function clearAll() {
+        // Deprecated: use clearCurrentPage() or clearAllData() instead
+        clearCurrentPage();
+    }
+
+    function rgbToHex(rgb) {
+        if (!rgb || rgb === 'transparent' || rgb.includes('rgba(0, 0, 0, 0)')) return '#ffffff';
+        const vals = rgb.match(/\d+/g);
+        return "#" + vals.slice(0,3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+    }
+
+    function showExportModal() {
+        // Export current project as HTML files + manifest entry for showcase gallery
+        // Populates default values from current project
+        const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+        
+        // Populate project metadata with defaults from current project
+        const currentProject = projects[currentProjectId];
+        document.getElementById('exportProjectName').value = currentProject ? currentProject.name : 'My Project';
+        document.getElementById('exportProjectDescription').value = currentProject ? currentProject.description : '';
+        document.getElementById('exportProjectIcon').value = '🎨';
+        document.getElementById('exportFolderPath').value = currentProject ? currentProject.name.toLowerCase().replace(/\s+/g, '') : 'my-project';
+        
+        // Populate page checkboxes
+        const selectedPagesContainer = document.getElementById('selectedPagesContainer');
+        selectedPagesContainer.innerHTML = '';
+        Object.keys(pages).forEach(pageId => {
+            const page = pages[pageId];
+            const checkbox = document.createElement('div');
+            checkbox.className = 'form-check';
+            checkbox.innerHTML = `
+                <input class="form-check-input" type="checkbox" id="page-${pageId}" value="${pageId}" checked>
+                <label class="form-check-label" for="page-${pageId}">
+                    ${page.name}
+                </label>
+            `;
+            selectedPagesContainer.appendChild(checkbox);
+        });
+        
+        // Toggle selected pages container visibility
+        document.querySelectorAll('input[name="exportOption"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                selectedPagesContainer.style.display = this.value === 'selected' ? 'block' : 'none';
+            });
+        });
+        
+        exportModal.show();
+    }
+    
+    function closeExportModal() {
+        const exportModal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+        if (exportModal) exportModal.hide();
+    }
+    
+    function generateManifestEntry() {
+        // Generate a manifest entry from the current export form values
+        const projectName = document.getElementById('exportProjectName').value.trim();
+        const description = document.getElementById('exportProjectDescription').value.trim();
+        const icon = document.getElementById('exportProjectIcon').value.trim();
+        const folderPath = document.getElementById('exportFolderPath').value.trim();
+        
+        if (!projectName || !folderPath) {
+            alert('Project name and folder path are required.');
+            return null;
+        }
+        
+        const manifestEntry = {
+            name: projectName,
+            description: description,
+            folderPath: folderPath,
+            pagePath: 'index.html', // Default main page
+            icon: icon || '🎨',
+            createdDate: new Date().toISOString()
+        };
+        
+        return manifestEntry;
+    }
+    
+    function exportPages() {
+        const exportOption = document.querySelector('input[name="exportOption"]:checked').value;
+        const pagesToExport = {};
+        
+        if (exportOption === 'current') {
+            pagesToExport[currentPageId] = pages[currentPageId];
+        } else if (exportOption === 'selected') {
+            document.querySelectorAll('#selectedPagesContainer input[type="checkbox"]:checked').forEach(checkbox => {
+                const pageId = checkbox.value;
+                pagesToExport[pageId] = pages[pageId];
+            });
+        } else if (exportOption === 'all') {
+            Object.keys(pages).forEach(pageId => {
+                pagesToExport[pageId] = pages[pageId];
+            });
+        }
+        
+        if (Object.keys(pagesToExport).length === 0) {
+            alert('Please select at least one page to export.');
+            return;
+        }
+        
+        // Generate manifest entry
+        const manifestEntry = generateManifestEntry();
+        if (!manifestEntry) return;
+        
+        if (Object.keys(pagesToExport).length === 1) {
+            // Export single page with manifest entry
+            const pageId = Object.keys(pagesToExport)[0];
+            const page = pagesToExport[pageId];
+            exportSinglePageWithManifest(page.name, page.content, manifestEntry);
+        } else {
+            // Export multiple pages as ZIP with manifest entry
+            exportMultiplePagesAsZipWithManifest(pagesToExport, manifestEntry);
+        }
+        
+        closeExportModal();
+    }
+    
+    // --- File Export Helpers ---
+    function extractLocalFilesFromContent(content) {
+        const usedFiles = {};
+        const clone = document.createElement('div');
+        clone.innerHTML = content;
+        
+        // Find all image sources and background images that reference local files
+        clone.querySelectorAll('img').forEach(img => {
+            if (img.src && localFiles[img.src]) {
+                usedFiles[img.src] = localFiles[img.src];
+            }
+        });
+        
+        clone.querySelectorAll('[style*="background"]').forEach(el => {
+            const bgImage = el.style.backgroundImage;
+            if (bgImage) {
+                const urlMatch = bgImage.match(/url\('([^']+)'\)/);
+                if (urlMatch && localFiles[urlMatch[1]]) {
+                    usedFiles[urlMatch[1]] = localFiles[urlMatch[1]];
+                }
+            }
+        });
+        
+        return usedFiles;
+    }
+    
+    function replaceLocalFilesInHtml(htmlContent, usedFiles) {
+        let result = htmlContent;
+        Object.keys(usedFiles).forEach(fileHash => {
+            const fileInfo = usedFiles[fileHash];
+            const filename = sanitizeFilename(fileInfo.originalName);
+            const assetPath = `assets/${filename}`;
+            
+            // Replace image src attributes
+            result = result.replace(new RegExp(`src=["']${escapeRegex(fileHash)}["']`, 'g'), `src="${assetPath}"`);
+            
+            // Replace background images
+            result = result.replace(new RegExp(`url\\(['"]${escapeRegex(fileHash)}['"]\\)`, 'g'), `url('${assetPath}')`);
+        });
+        return result;
+    }
+    
+    function sanitizeFilename(filename) {
+        return filename.replace(/[^a-z0-9._-]/gi, '_').toLowerCase();
+    }
+    
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    // --- End File Export Helpers ---
+    
+    function exportSinglePage(pageName, content) {
+        const usedFiles = extractLocalFilesFromContent(content);
+        const clone = document.createElement('div');
+        clone.innerHTML = content;
+        let htmlContent = '';
+        
+        clone.querySelectorAll('.section-wrapper').forEach(w => {
+            w.classList.remove('active');
+            w.querySelectorAll('.selected-element-highlight').forEach(el => el.classList.remove('selected-element-highlight'));
+            const section = w.querySelector('section, footer');
+            if(section) {
+                section.removeAttribute('contenteditable');
+                section.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+                htmlContent += section.outerHTML;
+            }
+        });
+        
+        // Replace local file references with asset paths
+        htmlContent = replaceLocalFilesInHtml(htmlContent, usedFiles);
+        
+        if (Object.keys(usedFiles).length > 0) {
+            // Use ZIP export for single page with assets
+            const zip = new JSZip();
+            const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${pageName}</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>${htmlContent}</body></html>`;
+            zip.file(pageName.toLowerCase().replace(/\s+/g, '-') + '.html', htmlOutput);
+            
+            // Add asset files
+            Object.keys(usedFiles).forEach(fileHash => {
+                const fileInfo = usedFiles[fileHash];
+                const filename = sanitizeFilename(fileInfo.originalName);
+                // Extract base64 data from data URL
+                const base64Data = fileInfo.dataUrl.split(',')[1];
+                zip.file(`assets/${filename}`, base64Data, {base64: true});
+            });
+            
+            zip.generateAsync({type: 'blob'}).then(blob => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = pageName.toLowerCase().replace(/\s+/g, '-') + '.zip';
+                a.click();
+            }).catch(err => {
+                alert('Error creating ZIP file: ' + err.message);
+            });
+        } else {
+            // Simple HTML download if no local files
+            const blob = new Blob([`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${pageName}</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>${htmlContent}</body></html>`], {type: 'text/html'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = pageName.toLowerCase().replace(/\s+/g, '-') + '.html';
+            a.click();
+        }
+    }
+    
+    function exportMultiplePagesAsZip(pagesToExport) {
+        // Check if JSZip is available
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP library not loaded. Exporting as combined HTML instead.');
+            exportMultiplePages(pagesToExport);
+            return;
+        }
+        
+        const zip = new JSZip();
+        const allUsedFiles = {};
+        
+        // Create individual HTML files for each page and collect all used files
+        Object.keys(pagesToExport).forEach(pageId => {
+            const page = pagesToExport[pageId];
+            const usedFiles = extractLocalFilesFromContent(page.content);
+            Object.assign(allUsedFiles, usedFiles);
+            
+            const htmlContent = generateCleanHtml(page.name, page.content, usedFiles);
+            const fileName = page.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '.html';
+            zip.file(fileName, htmlContent);
+        });
+        
+        // Also create an index.html that links to all pages
+        const indexHtml = generateIndexHtml(pagesToExport);
+        zip.file('index.html', indexHtml);
+        
+        // Add all local asset files
+        Object.keys(allUsedFiles).forEach(fileHash => {
+            const fileInfo = allUsedFiles[fileHash];
+            const filename = sanitizeFilename(fileInfo.originalName);
+            const base64Data = fileInfo.dataUrl.split(',')[1];
+            zip.file(`assets/${filename}`, base64Data, {base64: true});
+        });
+        
+        // Generate and download the ZIP file
+        zip.generateAsync({type: 'blob'}).then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'website.zip';
+            a.click();
+        }).catch(err => {
+            alert('Error creating ZIP file: ' + err.message);
+        });
+    }
+    
+    function generateCleanHtml(pageName, content, usedFiles = {}) {
+        const clone = document.createElement('div');
+        clone.innerHTML = content;
+        let htmlContent = '';
+        clone.querySelectorAll('.section-wrapper').forEach(w => {
+            w.classList.remove('active');
+            w.querySelectorAll('.selected-element-highlight').forEach(el => el.classList.remove('selected-element-highlight'));
+            const section = w.querySelector('section, footer');
+            if(section) {
+                section.removeAttribute('contenteditable');
+                section.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+                htmlContent += section.outerHTML;
+            }
+        });
+        
+        // Replace local file references with asset paths
+        htmlContent = replaceLocalFilesInHtml(htmlContent, usedFiles);
+        
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${pageName}</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>${htmlContent}</body></html>`;
+    }
+    
+    function generateIndexHtml(pagesToExport) {
+        let indexHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Site Index</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body><nav class="navbar navbar-expand-lg navbar-dark bg-dark"><div class="container"><span class="navbar-brand">Website</span></div></nav><main class="container py-5"><h1 class="mb-4">Site Pages</h1><div class="list-group">`;
+        
+        Object.keys(pagesToExport).forEach(pageId => {
+            const page = pagesToExport[pageId];
+            const fileName = page.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '.html';
+            indexHtml += `<a href="${fileName}" class="list-group-item list-group-item-action"><h5 class="mb-1">${page.name}</h5><p class="mb-0 text-muted">Click to view this page</p></a>`;
+        });
+        
+        indexHtml += `</div></main></body></html>`;
+        return indexHtml;
+    }
+    
+    function exportMultiplePages(pagesToExport) {
+        // Fallback: Export as single combined HTML with page sections
+        let combinedHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Website</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>`;
+        const allUsedFiles = {};
+        
+        Object.keys(pagesToExport).forEach((pageId, index) => {
+            const page = pagesToExport[pageId];
+            const usedFiles = extractLocalFilesFromContent(page.content);
+            Object.assign(allUsedFiles, usedFiles);
+            
+            if (index > 0) combinedHtml += '<hr class="my-5">';
+            combinedHtml += `<section class="py-5"><div class="container"><h1 class="mb-4">${page.name}</h1></div></section>`;
+            
+            const clone = document.createElement('div');
+            clone.innerHTML = page.content;
+            let pageHtmlContent = '';
+            clone.querySelectorAll('.section-wrapper').forEach(w => {
+                w.classList.remove('active');
+                w.querySelectorAll('.selected-element-highlight').forEach(el => el.classList.remove('selected-element-highlight'));
+                const section = w.querySelector('section, footer');
+                if(section) {
+                    section.removeAttribute('contenteditable');
+                    section.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+                    pageHtmlContent += section.outerHTML;
+                }
+            });
+            combinedHtml += replaceLocalFilesInHtml(pageHtmlContent, usedFiles);
+        });
+        
+        combinedHtml += '</body></html>';
+        
+        if (Object.keys(allUsedFiles).length > 0) {
+            // Use ZIP export if there are local files
+            const zip = new JSZip();
+            zip.file('index.html', combinedHtml);
+            
+            // Add all local asset files
+            Object.keys(allUsedFiles).forEach(fileHash => {
+                const fileInfo = allUsedFiles[fileHash];
+                const filename = sanitizeFilename(fileInfo.originalName);
+                const base64Data = fileInfo.dataUrl.split(',')[1];
+                zip.file(`assets/${filename}`, base64Data, {base64: true});
+            });
+            
+            zip.generateAsync({type: 'blob'}).then(blob => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'website.zip';
+                a.click();
+            }).catch(err => {
+                alert('Error creating ZIP file: ' + err.message);
+            });
+        } else {
+            // Simple HTML download if no local files
+            const blob = new Blob([combinedHtml], {type: 'text/html'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'website.html';
+            a.click();
+        }
+    }
+    
+    // --- New Manifest-Aware Export Functions ---
+    function exportSinglePageWithManifest(pageName, content, manifestEntry) {
+        // Export single page along with manifest.json entry
+        const usedFiles = extractLocalFilesFromContent(content);
+        const clone = document.createElement('div');
+        clone.innerHTML = content;
+        let htmlContent = '';
+        
+        clone.querySelectorAll('.section-wrapper').forEach(w => {
+            w.classList.remove('active');
+            w.querySelectorAll('.selected-element-highlight').forEach(el => el.classList.remove('selected-element-highlight'));
+            const section = w.querySelector('section, footer');
+            if(section) {
+                section.removeAttribute('contenteditable');
+                section.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+                htmlContent += section.outerHTML;
+            }
+        });
+        
+        htmlContent = replaceLocalFilesInHtml(htmlContent, usedFiles);
+        
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP library not loaded. Please add page content to your folder manually, then update projects-manifest.json with this entry:\n\n' + JSON.stringify(manifestEntry, null, 2));
+            return;
+        }
+        
+        const zip = new JSZip();
+        const mainPageHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${pageName}</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>${htmlContent}</body></html>`;
+        
+        // Add main page as index.html
+        zip.file('index.html', mainPageHtml);
+        
+        // Add manifest entry as manifest-entry.json
+        zip.file('manifest-entry.json', JSON.stringify([manifestEntry], null, 2));
+        
+        // Add asset files
+        Object.keys(usedFiles).forEach(fileHash => {
+            const fileInfo = usedFiles[fileHash];
+            const filename = sanitizeFilename(fileInfo.originalName);
+            const base64Data = fileInfo.dataUrl.split(',')[1];
+            zip.file(`assets/${filename}`, base64Data, {base64: true});
+        });
+        
+        zip.generateAsync({type: 'blob'}).then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = manifestEntry.folderPath + '.zip';
+            a.click();
+            
+            // Show helpful message
+            alert(`✓ Project exported successfully!\n\nTo use with Showcase Gallery:\n1. Extract the ZIP file to create /${manifestEntry.folderPath}/ folder\n2. Add the manifest-entry.json content to your projects-manifest.json\n3. Regenerate manifest using: node generate-manifest.js or python generate-manifest.py`);
+        }).catch(err => {
+            alert('Error creating ZIP file: ' + err.message);
+        });
+    }
+    
+    function exportMultiplePagesAsZipWithManifest(pagesToExport, manifestEntry) {
+        // Export multiple pages with manifest entry
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP library not loaded. Please export pages manually and update projects-manifest.json with:\n\n' + JSON.stringify(manifestEntry, null, 2));
+            return;
+        }
+        
+        const zip = new JSZip();
+        const allUsedFiles = {};
+        
+        // Create individual HTML files for each page
+        Object.keys(pagesToExport).forEach((pageId, index) => {
+            const page = pagesToExport[pageId];
+            const usedFiles = extractLocalFilesFromContent(page.content);
+            Object.assign(allUsedFiles, usedFiles);
+            
+            const htmlContent = generateCleanHtml(page.name, page.content, usedFiles);
+            
+            // First page becomes index.html, others get their own files
+            if (index === 0) {
+                zip.file('index.html', htmlContent);
+            } else {
+                const fileName = page.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '.html';
+                zip.file(fileName, htmlContent);
+            }
+        });
+        
+        // Add manifest entry
+        zip.file('manifest-entry.json', JSON.stringify([manifestEntry], null, 2));
+        
+        // Add all local asset files
+        Object.keys(allUsedFiles).forEach(fileHash => {
+            const fileInfo = allUsedFiles[fileHash];
+            const filename = sanitizeFilename(fileInfo.originalName);
+            const base64Data = fileInfo.dataUrl.split(',')[1];
+            zip.file(`assets/${filename}`, base64Data, {base64: true});
+        });
+        
+        // Generate and download the ZIP file
+        zip.generateAsync({type: 'blob'}).then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = manifestEntry.folderPath + '.zip';
+            a.click();
+            
+            // Show helpful message
+            alert(`✓ Project exported successfully!\n\nTo use with Showcase Gallery:\n1. Extract the ZIP file to create /${manifestEntry.folderPath}/ folder\n2. Add the manifest-entry.json content to your projects-manifest.json\n3. Regenerate manifest using: node generate-manifest.js or python generate-manifest.py`);
+        }).catch(err => {
+            alert('Error creating ZIP file: ' + err.message);
+        });
+    }
+    // --- End Manifest-Aware Export Functions ---
+    
+    function exportPage() {
+        // Legacy function - now calls the new modal-based export
+        showExportModal();
+    }
+    
+    function openShowcase() {
+        // Open the standalone Showcase Gallery page
+        // This displays projects from projects-manifest.json (directory-based)
+        // It is completely independent from builder project management
+        window.location.href = 'showcase projects page.html';
+    }
+    
+    // --- Import/Re-edit Functionality ---
+    
+    function importSite() {
+        document.getElementById('siteImportInput').click();
+    }
+    
+    async function handleFileImport(file) {
+        if (!file) return;
+        
+        try {
+            if (file.name.endsWith('.zip')) {
+                await importZipFile(file);
+            } else if (file.name.endsWith('.html')) {
+                const text = await file.text();
+                parseAndLoadHTML(text);
+            } else {
+                alert('Please select a valid HTML or ZIP file');
+            }
+        } catch (error) {
+            alert('Error importing file: ' + error.message);
+        }
+        
+        // Reset input
+        document.getElementById('siteImportInput').value = '';
+    }
+    
+    async function importZipFile(file) {
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP library not loaded. Please use HTML export instead.');
+            return;
+        }
+        
+        const zip = new JSZip();
+        const content = await zip.loadAsync(file);
+        
+        // Find HTML file(s)
+        let htmlFiles = [];
+        for (let filename in content.files) {
+            if (filename.endsWith('.html') && !filename.includes('__MACOSX')) {
+                htmlFiles.push(filename);
+            }
+        }
+        
+        if (htmlFiles.length === 0) {
+            alert('No HTML files found in ZIP');
+            return;
+        }
+        
+        // Extract assets and load them into localFiles
+        for (let filename in content.files) {
+            if (filename.startsWith('assets/') && !content.files[filename].dir) {
+                const assetFile = content.files[filename];
+                const data = await assetFile.async('arraybuffer');
+                
+                // Convert to base64
+                const bytes = new Uint8Array(data);
+                const binary = String.fromCharCode.apply(null, bytes);
+                const base64 = btoa(binary);
+                
+                // Determine MIME type
+                const ext = filename.split('.').pop().toLowerCase();
+                const mimeType = getMimeType(ext);
+                const dataUrl = `data:${mimeType};base64,${base64}`;
+                
+                // Create file hash and store
+                const originalName = filename.split('/').pop();
+                const fileHash = generateFileHash(originalName, bytes.length);
+                localFiles[fileHash] = {
+                    filename: originalName,
+                    dataUrl: dataUrl,
+                    type: mimeType,
+                    originalName: originalName
+                };
+            }
+        }
+        
+        // Load each HTML file as a separate page
+        if (htmlFiles.length === 1) {
+            const htmlFile = content.files[htmlFiles[0]];
+            const htmlContent = await htmlFile.async('string');
+            parseAndLoadHTML(htmlContent);
+        } else {
+            // Multiple pages - ask user
+            const useNewPages = confirm('Import each HTML file as a separate page? (Cancel to merge all into current page)');
+            
+            for (let filename of htmlFiles) {
+                if (useNewPages && filename !== htmlFiles[0]) {
+                    createNewPage();
+                }
+                const htmlFile = content.files[filename];
+                const htmlContent = await htmlFile.async('string');
+                parseAndLoadHTML(htmlContent, !useNewPages);
+            }
+        }
+    }
+    
+    function getMimeType(ext) {
+        const mimeTypes = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'webp': 'image/webp',
+            'svg': 'image/svg+xml',
+            'bmp': 'image/bmp'
+        };
+        return mimeTypes[ext] || 'image/jpeg';
+    }
+    
+    function parseAndLoadHTML(htmlContent, appendMode = false) {
+        // Create a temporary DOM to parse HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        
+        // Extract all sections and footers from body
+        const sections = doc.querySelectorAll('body > section, body > footer');
+        
+        if (sections.length === 0) {
+            alert('No sections found in HTML file');
+            return;
+        }
+        
+        // Ask about page handling if not in append mode
+        if (!appendMode) {
+            const createNewPageMode = confirm('Create new page for imported content? (Cancel to add to current page)');
+            if (createNewPageMode) {
+                createNewPage();
+            } else if (!appendMode) {
+                // Clear current page only if not appending
+                if (!confirm('Clear current page content?')) {
+                    return;
+                }
+                canvas.innerHTML = '';
+            }
+        }
+        
+        // Import each section
+        sections.forEach(section => {
+            const sectionType = detectSectionType(section);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'section-wrapper';
+            wrapper.dataset.type = sectionType;
+            
+            // Replace asset paths with file hashes
+            let sectionHtml = section.outerHTML;
+            
+            // Replace all asset paths
+            Object.keys(localFiles).forEach(fileHash => {
+                const filename = sanitizeFilename(localFiles[fileHash].originalName);
+                const assetPath = `assets/${filename}`;
+                // Create regex to find asset paths
+                const regex = new RegExp(escapeRegex(assetPath), 'g');
+                sectionHtml = sectionHtml.replace(regex, fileHash);
+            });
+            
+            wrapper.innerHTML = sectionHtml;
+            canvas.appendChild(wrapper);
+            attachClickHandlers(wrapper);
+        });
+        
+        saveState();
+        closeInspector();
+        alert('Site/page imported successfully!');
+    }
+    
+    function detectSectionType(section) {
+        const html = section.outerHTML.toLowerCase();
+        const textContent = section.textContent.toLowerCase();
+        
+        // Check for specific patterns
+        if (html.includes('class="card"') && html.includes('col-md-4')) {
+            return 'cards';
+        }
+        
+        if (html.includes('carousel') || html.includes('carousel-inner')) {
+            return 'carousel';
+        }
+        
+        if (html.includes('gallery-row') || html.includes('gallery-item')) {
+            return 'gallery';
+        }
+        
+        if (html.includes('testimonial') || (html.includes('blockquote-footer') && html.includes('card'))) {
+            return 'testimonials';
+        }
+        
+        if (html.includes('stat-item') || html.includes('display-6')) {
+            return 'stats';
+        }
+        
+        if (html.includes('pricing') || textContent.includes('per month')) {
+            return 'pricing';
+        }
+        
+        if (html.includes('dashboard') || html.includes('container-fluid')) {
+            return 'dashboard';
+        }
+        
+        if (html.includes('hero') || html.includes('display-4') || html.includes('background-image')) {
+            return 'hero';
+        }
+        
+        if (html.includes('form-wrapper') || html.includes('<form')) {
+            return 'form';
+        }
+        
+        if (section.tagName === 'FOOTER' || (html.includes('bg-dark') && textContent.includes('rights reserved'))) {
+            return 'footer';
+        }
+        
+        if (html.includes('call to action') || textContent.includes('ready to')) {
+            return 'cta';
+        }
+        
+        // Default to generic
+        return 'generic';
+    }
+    
+    // --- End Import/Re-edit Functionality ---</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects Showcase Gallery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar-custom {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-custom .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .navbar-custom .navbar-brand i {
+            margin-right: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-wrapper {
+            min-height: 100vh;
+            padding: 60px 20px 60px 20px;
+        }
+
+        .hero-section {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .hero-section h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-section p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+        }
+
+        .container-main {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Filter Bar */
+        .filter-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 50px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filter-section input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-section input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sort-btn {
+            padding: 10px 18px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .sort-btn:hover,
+        .sort-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Projects Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 35px;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .project-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, 20px); }
+        }
+
+        .project-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .project-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .project-description {
+            font-size: 0.95rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 2;
+        }
+
+        .project-body {
+            padding: 25px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meta-item i {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-share {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-share:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Preview Modal */
+        .modal-custom {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-custom.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content-custom {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow: auto;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header-custom {
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 15px 15px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-header-custom h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .modal-preview {
+            padding: 30px;
+            background: #f9f9f9;
+            min-height: 400px;
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-controls-left {
+            display: flex;
+            gap: 10px;
+        }
+
+        .preview-controls-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 10px 18px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: white;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .empty-state h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 2.5rem;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-section {
+                flex-direction: column;
+            }
+
+            .modal-content-custom {
+                width: 100%;
+                max-height: 85vh;
+            }
+
+            .preview-frame {
+                height: 400px;
+            }
+
+            .preview-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .preview-controls-left,
+            .preview-controls-right {
+                width: 100%;
+            }
+
+            .control-btn {
+                justify-content: center;
+                flex: 1;
+            }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 3000;
+        }
+
+        .toast {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
+            animation: slideInRight 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 300px;
+        }
+
+        .toast.success {
+            border-left: 4px solid #4caf50;
+        }
+
+        .toast.info {
+            border-left: 4px solid #2196f3;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .device-selector {
+            display: flex;
+            gap: 8px;
+        }
+
+        .device-btn {
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            min-width: 90px;
+        }
+
+        .url-input-group {
+            width: 100%;
+            display: flex;
+            gap: 10px;
+        }
+
+        .url-input-group input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .url-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar-custom">
+        <div class="container-main">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="navbar-brand">
+                    <i class="fas fa-palette"></i>Projects Showcase
+                </div>
+                <div style="color: #999; font-size: 0.95rem;">
+                    <i class="fas fa-folder"></i> <span id="projectCount">0</span> Projects
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="page-wrapper">
+        <div class="container-main">
+            <!-- Hero Section -->
+            <div class="hero-section">
+                <h1>🎨 Projects Gallery</h1>
+                <p>Browse all your exported projects and designs</p>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section" id="filterSection" style="display: none;">
+                <input type="text" id="searchInput" placeholder="🔍 Search projects..." />
+                <div class="sort-buttons">
+                    <button class="sort-btn active" onclick="sortProjects('newest')">
+                        <i class="fas fa-calendar-down"></i> Newest
+                    </button>
+                    <button class="sort-btn" onclick="sortProjects('name')">
+                        <i class="fas fa-sort-alpha-down"></i> A-Z
+                    </button>
+                </div>
+            </div>
+
+            <!-- Projects Grid -->
+            <div class="projects-grid" id="projectsGrid">
+                <!-- Projects will be loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-inbox"></i>
+                <h2>No Projects Yet</h2>
+                <p>Export your first project from the builder to see it here!</p>
+                <button onclick="location.href='index_beta.html'" style="padding: 12px 30px; background: white; color: #667eea; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                    <i class="fas fa-arrow-left"></i> Go to Builder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal-custom" id="previewModal">
+        <div class="modal-content-custom">
+            <div class="modal-header-custom">
+                <div>
+                    <h2 id="modalTitle">Project Preview</h2>
+                    <small style="opacity: 0.9; font-size: 0.9rem;" id="modalSubtitle"></small>
+                </div>
+                <button class="close-btn" onclick="closePreview()">&times;</button>
+            </div>
+            <div class="modal-preview">
+                <div class="preview-controls">
+                    <div class="preview-controls-left">
+                        <select class="control-btn" id="deviceSelector" style="border: none; padding: 10px 15px; background: white; border: 2px solid #e0e0e0;">
+                            <option value="desktop">🖥️ Desktop (1200px)</option>
+                            <option value="tablet">📱 Tablet (768px)</option>
+                            <option value="mobile">📱 Mobile (375px)</option>
+                        </select>
+                        <button class="control-btn" onclick="reloadPreview()">
+                            <i class="fas fa-redo"></i> Reload
+                        </button>
+                    </div>
+                    <div class="preview-controls-right">
+                        <button class="control-btn" id="takeScreenshot" onclick="captureScreenshot()">
+                            <i class="fas fa-camera"></i> Screenshot
+                        </button>
+                        <button class="control-btn" id="shareBtn" onclick="shareProject()">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+                <iframe id="previewFrame" class="preview-frame" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        // Project data
+        let allProjects = [];
+        let filteredProjects = [];
+        let currentProject = null;
+        let currentDevice = 'desktop';
+
+        // Device widths
+        const deviceWidths = {
+            desktop: '100%',
+            tablet: '768px',
+            mobile: '375px'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProjects();
+            setupEventListeners();
+            updateProjectCount();
+        });
+
+        function setupEventListeners() {
+            // Search
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                filterAndDisplayProjects(e.target.value.toLowerCase());
+            });
+
+            // Device selector
+            document.getElementById('deviceSelector').addEventListener('change', function(e) {
+                currentDevice = e.target.value;
+                updatePreviewSize();
+            });
+
+            // Close modal on backdrop click
+            document.getElementById('previewModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closePreview();
+                }
+            });
+
+            // Keyboard events
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePreview();
+                }
+            });
+        }
+
+        function loadProjects() {
+            // Load from projects-manifest.json (directory-based projects)
+            fetch('projects-manifest.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Manifest not found');
+                    }
+                    return response.json();
+                })
+                .then(manifest => {
+                    allProjects = manifest.projects.map((proj, idx) => ({
+                        id: idx + 1,
+                        name: proj.name,
+                        description: proj.description || 'No description',
+                        createdDate: new Date(proj.createdDate),
+                        icon: proj.icon || '🎨',
+                        folderPath: proj.folderPath,
+                        pagePath: proj.pagePath || 'index.html'
+                    }));
+
+                    updateProjectCount();
+                    if (allProjects.length === 0) {
+                        showEmptyState();
+                    } else {
+                        displayProjects(allProjects);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading projects manifest:', err);
+                    showManifestError();
+                });
+        }
+
+        function displayProjects(projects) {
+            const grid = document.getElementById('projectsGrid');
+            const filterSection = document.getElementById('filterSection');
+            const emptyState = document.getElementById('emptyState');
+
+            if (projects.length === 0) {
+                grid.style.display = 'none';
+                filterSection.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            filterSection.style.display = 'flex';
+            emptyState.style.display = 'none';
+
+            grid.innerHTML = projects.map(proj => `
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">${proj.icon}</div>
+                        <div class="project-name">${escapeHtml(proj.name)}</div>
+                        <div class="project-description">${escapeHtml(proj.description)}</div>
+                    </div>
+                    <div class="project-body">
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>${formatDate(proj.createdDate)}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-file-code"></i>
+                                <span>${proj.projectData?.pages ? Object.keys(proj.projectData.pages).length : 0} pages</span>
+                            </div>
+                        </div>
+                        <div class="project-actions">
+                            <button class="action-btn btn-view" onclick="openPreview(${proj.id})">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            <button class="action-btn btn-share" onclick="quickShare(${proj.id})">
+                                <i class="fas fa-share-alt"></i> Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterAndDisplayProjects(searchTerm = '') {
+            if (searchTerm) {
+                filteredProjects = allProjects.filter(proj =>
+                    proj.name.toLowerCase().includes(searchTerm) ||
+                    proj.description.toLowerCase().includes(searchTerm)
+                );
+            } else {
+                filteredProjects = [...allProjects];
+            }
+            displayProjects(filteredProjects);
+        }
+
+        function sortProjects(sortBy) {
+            // Update active button
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.sort-btn').classList.add('active');
+
+            if (sortBy === 'newest') {
+                filteredProjects.sort((a, b) => b.createdDate - a.createdDate);
+            } else if (sortBy === 'name') {
+                filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            displayProjects(filteredProjects);
+        }
+
+        function openPreview(projectId) {
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+
+            currentProject = project;
+            const modal = document.getElementById('previewModal');
+
+            // Update modal header
+            document.getElementById('modalTitle').textContent = project.name;
+            document.getElementById('modalSubtitle').textContent = project.description;
+
+            // Load from folder index.html
+            const frame = document.getElementById('previewFrame');
+            frame.onload = function() {
+                try {
+                    // Clear and set up iframe
+                    frame.contentDocument.open();
+                    frame.contentDocument.write('<p style="padding: 20px; text-align: center; color: #999;">Loading...</p>');
+                    frame.contentDocument.close();
+                    
+                    // Fetch and display the HTML file from project folder
+                    fetch(project.folderPath + '/' + project.pagePath)
+                        .then(response => {
+                            if (!response.ok) throw new Error('Failed to load');
+                            return response.text();
+                        })
+                        .then(html => {
+                            frame.contentDocument.open();
+                            frame.contentDocument.write(html);
+                            frame.contentDocument.close();
+                        })
+                        .catch(err => {
+                            console.error('Error loading file:', err);
+                            frame.contentDocument.open();
+                            frame.contentDocument.write(`<div style="padding: 40px; text-align: center; font-family: Arial;">
+                                <h3>❌ Unable to Load Preview</h3>
+                                <p>Could not load: <strong>${project.folderPath}/${project.pagePath}</strong></p>
+                                <p style="color: #999; font-size: 0.9rem;">Error: ${err.message}</p>
+                                <p style="color: #ccc; font-size: 0.85rem; margin-top: 20px;">Make sure the file exists and paths are correct in projects-manifest.json</p>
+                            </div>`);
+                            frame.contentDocument.close();
+                        });
+                } catch (e) {
+                    console.error('Frame error:', e);
+                }
+            };
+            frame.src = 'about:blank';
+
+            updatePreviewSize();
+            modal.classList.add('show');
+        }
+
+
+
+        function updatePreviewSize() {
+            const frame = document.getElementById('previewFrame');
+            frame.style.width = deviceWidths[currentDevice];
+        }
+
+        function reloadPreview() {
+            if (!currentProject) return;
+
+            const frame = document.getElementById('previewFrame');
+            
+            // Reload from project folder
+            fetch(currentProject.folderPath + '/' + currentProject.pagePath)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load');
+                    return response.text();
+                })
+                .then(html => {
+                    frame.contentDocument.open();
+                    frame.contentDocument.write(html);
+                    frame.contentDocument.close();
+                    showToast('Preview reloaded', 'info');
+                })
+                .catch(err => {
+                    console.error('Error reloading:', err);
+                    showToast('Failed to reload preview', 'error');
+                });
+        }
+
+        function captureScreenshot() {
+            if (!currentProject) return;
+
+            const btn = document.getElementById('takeScreenshot');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Capturing...';
+
+            const frame = document.getElementById('previewFrame');
+            
+            // Use html2canvas to capture the iframe content
+            html2canvas(frame.contentDocument.body, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                logging: false
+            }).then(canvas => {
+                // Create download link
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `${currentProject.name}-${Date.now()}.png`;
+                link.click();
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-camera"></i> Screenshot';
+                showToast('Screenshot downloaded! 📸', 'success');
+            }).catch(err => {
+                console.error('Screenshot failed:', err);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-camera"></i> Screenshot';
+                showToast('Failed to capture screenshot', 'error');
+            });
+        }
+
+        function shareProject() {
+            if (!currentProject) return;
+
+            const shareData = {
+                title: currentProject.name,
+                text: currentProject.description,
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => console.error('Share failed:', err));
+            } else {
+                // Fallback: Copy to clipboard
+                const text = `${currentProject.name}\n${currentProject.description}\n${window.location.href}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Share link copied to clipboard! 📋', 'success');
+                });
+            }
+        }
+
+        function quickShare(projectId) {
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const shareData = {
+                title: project.name,
+                text: project.description,
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => console.error('Share failed:', err));
+            } else {
+                const text = `Check out "${project.name}": ${project.description}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Copied to clipboard! 📋', 'success');
+                });
+            }
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').classList.remove('show');
+            currentProject = null;
+        }
+
+        function updateProjectCount() {
+            document.getElementById('projectCount').textContent = allProjects.length;
+        }
+
+        function showEmptyState() {
+            document.getElementById('projectsGrid').style.display = 'none';
+            document.getElementById('filterSection').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        function showManifestError() {
+            const emptyState = document.getElementById('emptyState');
+            emptyState.innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="font-size: 4rem; margin-bottom: 20px; opacity: 0.8;"></i>
+                <h2>⚙️ Configuration Needed</h2>
+                <p>projects-manifest.json file not found or invalid</p>
+                <div style="margin-top: 30px; text-align: left; display: inline-block; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; font-size: 0.9rem;">
+                    <p><strong>To set up your showcase:</strong></p>
+                    <ol style="margin: 10px 0; padding-left: 20px;">
+                        <li>Organize projects in folders: <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 3px;">/ProjectName/index.html</code></li>
+                        <li>Generate manifest by running:<br><code style="background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 3px; display: inline-block; margin-top: 5px;">node generate-manifest.js</code> or <code style="background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 3px; display: inline-block;">python generate-manifest.py</code></li>
+                        <li>Refresh this page</li>
+                    </ol>
+                    <p style="margin-top: 15px; opacity: 0.8;">See <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 3px;">DIRECTORY_SHOWCASE_GUIDE.md</code> for detailed instructions</p>
+                </div>
+                <button onclick="location.href='index_beta.html'" style="margin-top: 30px; padding: 12px 30px; background: white; color: #667eea; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                    <i class="fas fa-arrow-left"></i> Back to Builder
+                </button>
+            `;
+            document.getElementById('projectsGrid').style.display = 'none';
+            document.getElementById('filterSection').style.display = 'none';
+            emptyState.style.display = 'block';
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
