@@ -838,42 +838,49 @@
             document.getElementById('modalTitle').textContent = project.name;
             document.getElementById('modalSubtitle').textContent = project.description;
 
-            // Load from folder index.html
+            // Show loading state first
             const frame = document.getElementById('previewFrame');
-            frame.onload = function() {
-                try {
-                    // Clear and set up iframe
-                    frame.contentDocument.open();
-                    frame.contentDocument.write('<p style="padding: 20px; text-align: center; color: #999;">Loading...</p>');
-                    frame.contentDocument.close();
+            frame.srcdoc = '<div style="padding: 40px; text-align: center; font-family: Arial; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 20px; color: #667eea;"></i><p>Loading preview...</p></div>';
+
+            // Fetch and load HTML into iframe
+            fetch(project.folderPath + '/' + project.pagePath)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to load: ' + response.status);
+                    return response.text();
+                })
+                .then(html => {
+                    // Ensure proper DOCTYPE to avoid Quirks Mode
+                    let htmlContent = html.trim();
+                    if (!htmlContent.toLowerCase().startsWith('<!doctype')) {
+                        htmlContent = '<!DOCTYPE html>\n' + htmlContent;
+                    }
                     
-                    // Fetch and display the HTML file from project folder
-                    fetch(project.folderPath + '/' + project.pagePath)
-                        .then(response => {
-                            if (!response.ok) throw new Error('Failed to load');
-                            return response.text();
-                        })
-                        .then(html => {
-                            frame.contentDocument.open();
-                            frame.contentDocument.write(html);
-                            frame.contentDocument.close();
-                        })
-                        .catch(err => {
-                            console.error('Error loading file:', err);
-                            frame.contentDocument.open();
-                            frame.contentDocument.write(`<div style="padding: 40px; text-align: center; font-family: Arial;">
-                                <h3>❌ Unable to Load Preview</h3>
-                                <p>Could not load: <strong>${project.folderPath}/${project.pagePath}</strong></p>
-                                <p style="color: #999; font-size: 0.9rem;">Error: ${err.message}</p>
-                                <p style="color: #ccc; font-size: 0.85rem; margin-top: 20px;">Make sure the file exists and paths are correct in projects-manifest.json</p>
-                            </div>`);
-                            frame.contentDocument.close();
-                        });
-                } catch (e) {
-                    console.error('Frame error:', e);
-                }
-            };
-            frame.src = 'about:blank';
+                    // Load HTML directly via srcdoc
+                    frame.srcdoc = htmlContent;
+                })
+                .catch(err => {
+                    console.error('Error loading file:', err);
+                    frame.srcdoc = `<!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Error</title>
+                    </head>
+                    <body style="padding: 40px; text-align: center; font-family: Arial;">
+                        <h3 style="color: #d32f2f;">❌ Unable to Load Preview</h3>
+                        <p>Could not load: <strong>${escapeHtml(project.folderPath)}/${escapeHtml(project.pagePath)}</strong></p>
+                        <p style="color: #999; font-size: 0.9rem;">Error: ${escapeHtml(err.message)}</p>
+                        <p style="color: #ccc; font-size: 0.85rem; margin-top: 20px;">
+                            <strong>Troubleshooting:</strong><br>
+                            • Verify the file path exists<br>
+                            • Check projects-manifest.json has correct folderPath and pagePath<br>
+                            • Ensure HTML file is in the correct location<br>
+                            • Check browser console (F12) for more details
+                        </p>
+                    </body>
+                    </html>`;
+                });
 
             updatePreviewSize();
             modal.classList.add('show');
@@ -891,6 +898,9 @@
 
             const frame = document.getElementById('previewFrame');
             
+            // Show loading state
+            frame.srcdoc = '<div style="padding: 40px; text-align: center; font-family: Arial; color: #999;"><i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 20px; color: #667eea;"></i><p>Reloading preview...</p></div>';
+            
             // Reload from project folder
             fetch(currentProject.folderPath + '/' + currentProject.pagePath)
                 .then(response => {
@@ -898,9 +908,12 @@
                     return response.text();
                 })
                 .then(html => {
-                    frame.contentDocument.open();
-                    frame.contentDocument.write(html);
-                    frame.contentDocument.close();
+                    // Ensure proper DOCTYPE
+                    let htmlContent = html.trim();
+                    if (!htmlContent.toLowerCase().startsWith('<!doctype')) {
+                        htmlContent = '<!DOCTYPE html>\n' + htmlContent;
+                    }
+                    frame.srcdoc = htmlContent;
                     showToast('Preview reloaded', 'info');
                 })
                 .catch(err => {
@@ -918,27 +931,38 @@
 
             const frame = document.getElementById('previewFrame');
             
-            // Use html2canvas to capture the iframe content
-            html2canvas(frame.contentDocument.body, {
-                backgroundColor: '#ffffff',
-                scale: 2,
-                logging: false
-            }).then(canvas => {
-                // Create download link
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = `${currentProject.name}-${Date.now()}.png`;
-                link.click();
+            // Wait for iframe to be fully loaded before capturing
+            setTimeout(() => {
+                try {
+                    html2canvas(frame.contentDocument.documentElement, {
+                        backgroundColor: '#ffffff',
+                        scale: 2,
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true
+                    }).then(canvas => {
+                        // Create download link
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL('image/png');
+                        link.download = `${currentProject.name.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.png`;
+                        link.click();
 
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-camera"></i> Screenshot';
-                showToast('Screenshot downloaded! 📸', 'success');
-            }).catch(err => {
-                console.error('Screenshot failed:', err);
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-camera"></i> Screenshot';
-                showToast('Failed to capture screenshot', 'error');
-            });
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-camera"></i> Screenshot';
+                        showToast('Screenshot downloaded! 📸', 'success');
+                    }).catch(err => {
+                        console.error('Screenshot failed:', err);
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-camera"></i> Screenshot';
+                        showToast('Failed to capture screenshot', 'error');
+                    });
+                } catch (e) {
+                    console.error('Capture error:', e);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-camera"></i> Screenshot';
+                    showToast('Failed to capture screenshot', 'error');
+                }
+            }, 500); // Wait for iframe content to render
         }
 
         function shareProject() {
