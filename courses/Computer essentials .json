@@ -1,135 +1,136 @@
 {
   "courseMetadata": {
     "title": "Computer Essentials: Comprehensive Workforce Readiness",
-    "version": "v3.0.26",
+    "version": "v3.1.26",
     "passingScore": 85
   },
   "studyMaterial": [
     {
       "topic": "The Hardware Ecosystem",
-      "content": "Computers rely on the CPU (Brain), RAM (Active memory), and Storage (SSD/HDD). Peripherals are external: Input devices (Keyboard, Mouse, Mic) send data in; Output devices (Monitor, Printer, Speakers) send data out. A Motherboard connects them all."
+      "content": "<h4>What Makes Up a Computer?</h4><p>A computer system combines hardware (physical parts) and software to process, store, and share information. Mastering hardware basics helps you troubleshoot issues, choose equipment, and understand performance in any workplace.</p><h5>Core Internal Components</h5><ul><li><strong>CPU (Central Processing Unit):</strong> The processor or 'brain' that executes instructions, performs calculations, and runs all software. Measured in cores and GHz; modern CPUs (e.g., Intel Core i5/i7 or AMD Ryzen) handle multitasking and AI-assisted tools efficiently.</li><li><strong>RAM (Random Access Memory):</strong> Volatile, high-speed memory for active tasks and open programs. 8–16 GB is minimum for office work; 32 GB+ recommended for heavy multitasking, video calls, or data analysis. Data clears on shutdown.</li><li><strong>Storage:</strong> Long-term data retention. <strong>SSDs</strong> (NVMe preferred) offer fast boot times and file access; <strong>HDDs</strong> provide cheaper, larger capacity but slower speeds. Hybrid setups are common in 2026 workstations.</li><li><strong>Motherboard:</strong> The central circuit board connecting CPU, RAM, storage, GPU, and peripherals via buses and ports.</li><li><strong>Graphics Processing Unit (GPU):</strong> Handles visuals; integrated GPUs suffice for office tasks, while dedicated GPUs accelerate video editing or data visualization.</li></ul><h5>Input & Output Devices</h5><p><strong>Input:</strong> Keyboard, mouse/trackpad, touchscreen, webcam, microphone, scanner, barcode reader.</p><p><strong>Output:</strong> Monitor (1080p minimum, 4K common), speakers/headset, printer (laser for offices, inkjet for color), projector.</p><h5>Power & Peripherals</h5><p>The power supply unit (PSU) delivers stable electricity. Use surge protectors to guard against power spikes. External peripherals (USB drives, external monitors, docking stations) extend functionality in hybrid/remote work setups.</p><h5>Basic Troubleshooting Tip</h5><p>If the computer won't start: check power connections, listen for beeps/fans, ensure monitor cable is secure.</p>"
     },
     {
       "topic": "Software & Operating Systems",
-      "content": "System Software (Windows, macOS) manages the hardware. Application Software (Word, Chrome, Zoom) helps you perform tasks. Keep your Operating System (OS) updated to ensure security patches are applied."
+      "content": "<h4>Software Fundamentals</h4><p>Software provides instructions for hardware. It divides into system software (runs the machine) and application software (performs user tasks).</p><h5>Operating Systems (System Software)</h5><ul><li><strong>Windows 11/365:</strong> Dominant in business environments; seamless integration with Microsoft 365, Active Directory, and enterprise security tools.</li><li><strong>macOS:</strong> Preferred in creative, media, and design industries; excellent stability and integration with Apple ecosystem.</li><li><strong>Linux distributions (e.g., Ubuntu):</strong> Free, secure, customizable; common in servers, development, data science, and cost-sensitive organizations.</li><li><strong>Chrome OS:</strong> Lightweight, cloud-first; popular in education and simple office roles.</li></ul><p>The OS manages hardware resources, memory, processes, file systems, security, and the graphical user interface (GUI).</p><h5>Application Software Categories</h5><ul><li><strong>Productivity Suites:</strong> Microsoft 365 (Word, Excel, PowerPoint, Teams), Google Workspace, LibreOffice</li><li><strong>Communication & Collaboration:</strong> Microsoft Teams, Zoom, Slack, Outlook, Gmail</li><li><strong>Web Browsers:</strong> Google Chrome, Microsoft Edge, Mozilla Firefox (use updated versions for security)</li><li><strong>Creative & Specialized:</strong> Canva, Adobe Creative Cloud, Notion, basic AI tools (Copilot, Gemini)</li></ul><h5>Software Maintenance & Security</h5><p>Regular updates patch vulnerabilities, improve performance, and add features. Enable automatic updates. Outdated software is a top entry point for malware and ransomware in workplaces.</p>"
     },
     {
-      "topic": "Networking & The Cloud",
-      "content": "Internet access happens via Wi-Fi (Wireless) or Ethernet (Wired/Faster). Cloud Computing (OneDrive, Google Drive, Dropbox) allows you to store files on remote servers so you can access them from any device. An IP address is your computer's digital home address."
+      "topic": "Networking, Internet & The Cloud",
+      "content": "<h4>Connecting Computers & Resources</h4><p>Networking enables data sharing, internet access, printing, and collaboration—core to modern hybrid work.</p><h5>Connection Methods</h5><ul><li><strong>Wired (Ethernet):</strong> Most reliable, lowest latency, highest security; ideal for desktops, video conferencing, large transfers.</li><li><strong>Wi-Fi (Wireless):</strong> Flexible for laptops/mobile; use WPA3 encryption, 5/6 GHz bands for speed. Avoid public/open networks for sensitive work.</li><li><strong>Mobile data / Hotspot:</strong> Useful backup; consume data carefully.</li></ul><h5>IP Addresses & Basic Networking</h5><p>IP addresses identify devices. Public IP (assigned by ISP) for internet; private IPs (192.168.x.x range) for local networks via router. Know your IP for troubleshooting (ipconfig on Windows, ifconfig/ip on macOS/Linux).</p><h5>The Internet & WWW</h5><p>Search effectively with keywords, quotes for phrases, site: operator. Evaluate sources for credibility (author, date, domain).</p><h5>Cloud Computing Essentials</h5><p>Remote servers store/process data instead of local drives.<strong>Key services (2026):</strong> OneDrive, Google Drive, Dropbox, iCloud, SharePoint, Box.<p><strong>Advantages:</strong> Multi-device sync, real-time collaboration, version history, disaster recovery, reduced local storage needs.</p><p><strong>Risks & Best Practices:</strong> Strong passwords + MFA, encrypt sensitive files, understand sharing permissions, maintain offline backups for critical data.</p>"
     },
     {
-      "topic": "File Management & Productivity",
-      "content": "Files have extensions: .pdf (Document), .docx (Word), .xlsx (Excel), and .zip (Compressed/Combined files). Use Folders to stay organized. 'Cloud Syncing' means changes made on your PC are automatically updated on your phone or web browser."
+      "topic": "File Management, Organization & Basic Productivity",
+      "content": "<h4>Managing Digital Information Effectively</h4><p>Efficient file handling prevents lost work, speeds retrieval, and supports teamwork.</p><h5>Files, Folders & Extensions</h5><ul><li><strong>Documents:</strong> .docx, .pdf (universal), .txt</li><li><strong>Spreadsheets:</strong> .xlsx, .csv</li><li><strong>Presentations:</strong> .pptx</li><li><strong>Media:</strong> .jpg/.png (images), .mp4/.mov (video), .mp3 (audio)</li><li><strong>Archives:</strong> .zip, .rar, .7z</li><li><strong>Executables:</strong> .exe, .msi (installers—run only from trusted sources)</li></ul><h5>Best Practices for Organization</h5><ul><li>Use hierarchical folders: e.g., Documents → Department → Projects → Year/Client → Deliverables</li><li>Adopt naming conventions: YYYY-MM-DD_ProjectName_Version_Status.docx</li><li>Delete duplicates, archive old projects</li><li>Use search tools and tags/metadata</li><li>Empty Recycle Bin/Trash regularly</li></ul><h5>Cloud Sync vs. Local + Backup Strategy</h5><p>Sync (OneDrive/Google Drive) keeps files identical across devices automatically. Combine with external drive or secondary cloud for 3-2-1 backup rule (3 copies, 2 media types, 1 offsite). Version history prevents accidental overwrites.</p><h5>Basic Troubleshooting</h5><p>File won’t open? Check extension matches program. Slow computer? Close unused apps, clear temp files, restart weekly.</p>"
     },
     {
-      "topic": "Cybersecurity & Phishing",
-      "content": "Multi-Factor Authentication (MFA) adds a second layer of security (like a code on your phone). Phishing scams use urgent language or fake 'From' addresses to steal passwords. Never click links in emails from unverified senders."
+      "topic": "Cybersecurity, Privacy & Safe Digital Practices",
+      "content": "<h4>Protecting Yourself and Your Organization</h4><p>Cyber threats (ransomware, phishing, data breaches) target individuals and companies daily. Basic vigilance prevents most incidents.</p><h5>Strong Authentication</h5><p>Use unique, complex passwords (16+ characters). Prefer passphrases. Enable MFA everywhere possible—especially email, banking, work accounts.</p><h5>Phishing & Social Engineering Awareness</h5><p>Common red flags: urgent demands, unsolicited requests, misspelled domains (e.g., microsfot.com), hover-check links, unexpected attachments, spoofed sender names.</p><p>Never share OTPs/codes. Verify suspicious requests via separate channel.</p><h5>Essential Safe Habits</h5><ul><li>Keep OS, browser, antivirus updated (use built-in Defender + reputable third-party if needed)</li><li>Avoid public Wi-Fi for sensitive tasks; use VPN if required</li><li>Don’t click unknown links/attachments</li><li>Regularly review connected apps/devices</li><li>Backup data before incidents occur</li><li>Understand privacy settings on social media & cloud shares</li></ul><h5>Workplace Policies</h5><p>Follow company IT policies on BYOD, data classification, acceptable use. Report suspicious activity immediately.</p>"
     },
     {
-      "topic": "Digital Professionalism (Email)",
-      "content": "CC (Carbon Copy) is for people who need to see the email but don't need to act. BCC (Blind Carbon Copy) hides the recipient's email from others—use this when emailing large groups to protect privacy."
+      "topic": "Digital Professionalism & Workplace Communication",
+      "content": "<h4>Professional Digital Etiquette & Tools</h4><p>Effective digital communication builds trust, clarity, and efficiency in professional settings.</p><h5>Email Mastery</h5><ul><li><strong>TO:</strong> Main action recipients</li><li><strong>CC:</strong> Informational copies (visible to all)</li><li><strong>BCC:</strong> Privacy protection for groups or external lists</li></ul><p><strong>Examples:</strong> BCC clients in mass sends; CC supervisor on client replies.</p><h5>Professional Email Standards</h5><ul><li>Clear, specific subject lines (e.g., 'Q2 Report Review – Action Required by Friday')</li><li>Personalized greeting + concise body (bullet points for readability)</li><li>Professional tone—no ALL CAPS, minimal emojis, proper grammar/spelling</li><li>Signature with name, title, contact info</li><li>Reply promptly; use 'Reply All' only when necessary</li><li>Avoid sending outside business hours unless urgent</li></ul><h5>Beyond Email</h5><p>Use Teams/Slack for quick internal chats; Zoom/Teams for meetings (camera on when appropriate, mute when not speaking, virtual background if needed). Share screens/files securely. Respect response time expectations.</p><h5>Digital Footprint & Ethics</h5><p>Be mindful of what you post/share online. Avoid discussing confidential work matters on personal social media. Use company devices/tools for work tasks when possible.</p>"
     }
   ],
   "questions": [
     {
       "id": 1,
       "type": "multiple",
-      "text": "Identify all 'Internal Hardware' located inside the computer case:",
+      "text": "Identify all internal hardware components typically located inside the computer case:",
       "options": [
         "CPU (Central Processing Unit)",
         "Motherboard",
-        "RAM",
+        "RAM modules",
         "Laser Printer",
+        "Solid State Drive (SSD)",
         "Graphics Card (GPU)"
       ],
-      "correct": [0, 1, 2, 4],
-      "points": 4,
-      "feedback": "Internal hardware includes the CPU, RAM, Motherboard, and GPU. Printers are external peripherals."
+      "correct": [0, 1, 2, 4, 5],
+      "points": 5,
+      "feedback": "Internal components include CPU, motherboard, RAM, storage (SSD/HDD), and GPU. A printer is an external output device."
     },
     {
       "id": 2,
       "type": "single",
-      "text": "You are sending a newsletter to 50 clients and want to protect their privacy so they cannot see each other's email addresses. Which field should you use?",
+      "text": "When emailing a large external client list for a newsletter while protecting privacy, which field should you use for client addresses?",
       "options": ["TO", "CC", "BCC", "Subject"],
       "correct": [2],
       "points": 1,
-      "feedback": "BCC (Blind Carbon Copy) hides recipient names and addresses from everyone else on the thread."
+      "feedback": "BCC hides recipient addresses from each other, preserving privacy and preventing 'reply-all' issues."
     },
     {
       "id": 3,
       "type": "multiple",
-      "text": "Select the benefits of using Cloud Storage (like Google Drive or OneDrive):",
+      "text": "Select the key benefits of cloud storage services (e.g., OneDrive, Google Drive) in a professional environment:",
       "options": [
-        "Files can be accessed from any device with internet.",
-        "It makes your computer run 5x faster.",
-        "Allows for easy collaboration on the same document.",
-        "Acts as a backup if your physical computer is stolen or broken.",
-        "Prevents all viruses from ever entering your computer."
+        "Access files from any internet-connected device",
+        "Automatic real-time syncing and version history",
+        "Built-in collaboration features for team editing",
+        "Complete protection against all malware",
+        "Backup and recovery if local device fails"
       ],
-      "correct": [0, 2, 3],
-      "points": 3,
-      "feedback": "Cloud storage provides accessibility, collaboration, and backup, but it doesn't speed up your local processor or act as a total antivirus."
+      "correct": [0, 1, 2, 4],
+      "points": 4,
+      "feedback": "Cloud offers accessibility, sync, collaboration, and backup. It does not inherently prevent malware."
     },
     {
       "id": 4,
       "type": "multiple",
-      "text": "Which of these are common file extensions for documents and data?",
-      "options": [".pdf", ".xlsx", ".exe", ".docx", ".zip"],
-      "correct": [0, 1, 3],
-      "points": 3,
-      "feedback": ".pdf, .xlsx (Excel), and .docx (Word) are document types. .exe is an installer/program and .zip is a compressed folder."
+      "text": "Which file extensions are commonly associated with professional office documents?",
+      "options": [".pdf", ".xlsx", ".exe", ".docx", ".zip", ".pptx"],
+      "correct": [0, 1, 3, 5],
+      "points": 4,
+      "feedback": ".pdf (universal), .xlsx (Excel), .docx (Word), .pptx (PowerPoint) are standard document types. .exe is executable; .zip is compressed archive."
     },
     {
       "id": 5,
       "type": "single",
-      "text": "Your internet is slow during a video call. Which connection type is generally the most stable and fastest?",
-      "options": ["Public Wi-Fi", "Mobile Hotspot", "Wired Ethernet Cable", "Bluetooth Tethering"],
+      "text": "For stable, high-performance internet during important video calls or large file uploads, which connection is generally best?",
+      "options": ["Public Wi-Fi hotspot", "Mobile data tethering", "Wired Ethernet", "Bluetooth connection"],
       "correct": [2],
       "points": 1,
-      "feedback": "A wired Ethernet connection is less prone to interference and offers more consistent speeds than wireless."
+      "feedback": "Wired Ethernet provides the most consistent speed, lowest latency, and highest reliability."
     },
     {
       "id": 6,
       "type": "multiple",
-      "text": "Identify signs of a Phishing email:",
+      "text": "Select common indicators of a potential phishing attempt:",
       "options": [
-        "The 'From' email address is 'support@microsoft-security-alert.net' instead of '@microsoft.com'.",
-        "The email asks you to 'Click here immediately to prevent account deletion'.",
-        "The email greeting is generic, like 'Dear Valued Member'.",
-        "The email contains your actual employee ID number.",
-        "The email has several spelling and grammar mistakes."
+        "Sender domain slightly misspelled (e.g., microsfot.com)",
+        "Urgent threats like 'Account suspension in 24 hours'",
+        "Generic greeting such as 'Dear User'",
+        "Request to share your MFA code for 'verification'",
+        "Personalized greeting with your full name and employee ID"
       ],
-      "correct": [0, 1, 2, 4],
+      "correct": [0, 1, 2, 3],
       "points": 4,
-      "feedback": "Phishing often uses fake domains, urgency, generic greetings, and poor grammar to trick users."
+      "feedback": "Phishing uses spoofed domains, urgency, generic greetings, and tricks for credentials/codes. Legitimate emails rarely ask for MFA codes."
     },
     {
       "id": 7,
       "type": "single",
-      "text": "What is the primary function of an Operating System (OS)?",
+      "text": "What is the main role of an operating system in a computer?",
       "options": [
-        "To allow you to browse the internet.",
-        "To act as the interface between the user, applications, and hardware.",
-        "To protect the computer from physical dust.",
-        "To store all your photos and videos."
+        "To provide antivirus protection only",
+        "To manage hardware, run applications, and provide the user interface",
+        "To store permanent user files and media",
+        "To connect directly to printers and scanners"
       ],
       "correct": [1],
       "points": 1,
-      "feedback": "The OS (Windows/macOS) is the foundation that manages hardware and allows apps to run."
+      "feedback": "The OS (e.g., Windows, macOS) bridges hardware and software, manages resources, and enables user interaction."
     },
     {
       "id": 8,
       "type": "single",
-      "text": "If your computer screen freezes and you cannot move the mouse, what is the 'hard reset' procedure?",
+      "text": "Your computer becomes completely unresponsive (frozen screen, no mouse/keyboard input). What is the safest hard reset method?",
       "options": [
-        "Press 'Ctrl+C' repeatedly.",
-        "Wait 24 hours for it to unfreeze.",
-        "Hold down the physical power button until the machine turns off.",
-        "Click the 'Restart' button in the Start Menu."
+        "Press Ctrl + Alt + Delete repeatedly",
+        "Wait several hours for it to recover",
+        "Hold the physical power button for 5–10 seconds until shutdown",
+        "Unplug the power cord immediately (for desktops)"
       ],
       "correct": [2],
       "points": 1,
-      "feedback": "When the software is totally unresponsive, a hard reset via the physical power button is the last resort."
+      "feedback": "Holding the power button forces a hard shutdown when the system is fully locked. Use as last resort; prefer normal restart when possible."
     }
   ]
 }
