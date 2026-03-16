@@ -3,33 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simplified Bootstrap Builder Template</title>
+    <title>MTE Website Builder - Create Beautiful Websites</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { display: flex; height: 100vh; overflow: hidden; background: #f0f2f5; }
-        #sidebar { width: 260px; background: #212529; color: white; padding: 20px; overflow-y: auto; flex-shrink: 0; }
+        #sidebar { width: 260px; background: #212529; color: white; padding: 20px; overflow-y: auto; overflow-x: hidden; flex-shrink: 0; transition: transform 0.3s ease, width 0.3s ease; height: 100vh; box-sizing: border-box; }
+        #sidebar.collapsed { width: 0; padding: 0; overflow: hidden; transform: translateX(-100%); }
+        #sidebar::-webkit-scrollbar { width: 6px; }
+        #sidebar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        #sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        #sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        
         #canvas-container { flex: 1; overflow-y: auto; padding: 40px; display: flex; justify-content: center; }
         #canvas { width: 100%; max-width: 1000px; background: white; min-height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-        #inspector { width: 300px; background: white; border-left: 1px solid #dee2e6; padding: 20px; display: none; flex-shrink: 0; overflow-y: auto; max-height: 100vh; }
+        #inspector { width: 300px; background: white; border-left: 1px solid #dee2e6; padding: 20px; display: none; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; max-height: 100vh; height: 100vh; box-sizing: border-box; transition: transform 0.3s ease, width 0.3s ease; }
+        #inspector::-webkit-scrollbar { width: 6px; }
+        #inspector::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        #inspector::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        #inspector::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        #inspector.collapsed { width: 0; padding: 0; overflow: hidden; transform: translateX(100%); display: block !important; }
+        
+        .toggle-btn { position: fixed; z-index: 1000; padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: all 0.3s ease; }
+        .toggle-btn:hover { background: #5568d3; transform: scale(1.05); }
+        .toggle-sidebar-btn { left: 10px; top: 10px; }
+        .toggle-inspector-btn { right: 10px; top: 10px; }
 
-        .section-wrapper { position: relative; cursor: pointer; border: 2px solid transparent; margin-bottom: 15px;}
-        .section-wrapper:hover { border: 2px solid #0d6efd; }
+        .section-wrapper { position: relative; cursor: pointer; border: 2px solid transparent; margin-bottom: 15px; transition: all 0.2s ease; min-height: 100px; }
+        .section-wrapper:hover { border: 2px solid #0d6efd; background: rgba(13, 110, 253, 0.08); }
         .section-wrapper.active { border: 2px solid #0d6efd; z-index: 10; background: rgba(13, 110, 253, 0.02); }
+        
+        /* Navbar should have no margins to sit flush */
+        .section-wrapper[data-type="navbar"] { margin-bottom: 0; margin-top: 0; min-height: auto; }
+        .section-wrapper[data-type="navbar"]:hover { border: none; background: transparent; }
+        .section-wrapper[data-type="navbar"].active { border: 2px solid #0d6efd; }
+
+        /* Highlight for hovered element within a section */
+        .element-hover-highlight { 
+            outline: 2px dashed #28a745 !important; 
+            outline-offset: 2px;
+            transition: outline 0.15s ease;
+        }
 
         /* Highlight for selected element within a section */
-        .selected-element-highlight { outline: 2px solid #ffc107; }
+        .selected-element-highlight { 
+            outline: 2px solid #ffc107 !important; 
+            outline-offset: 2px;
+            background: rgba(255, 193, 7, 0.05) !important;
+            transition: outline 0.15s ease;
+        }
 
         .inspector-label { font-size: 0.75rem; font-weight: bold; color: #6c757d; text-transform: uppercase; margin-top: 15px; display: block; }
     </style>
 </head>
 <body>
+    <!-- Toggle buttons for sidebars -->
+    <button class="toggle-btn toggle-sidebar-btn" id="toggleSidebarBtn" onclick="toggleSidebar()" title="Toggle Sidebar">◄ / ►</button>
+    <button class="toggle-btn toggle-inspector-btn" id="toggleInspectorBtn" onclick="toggleInspector()" title="Toggle Inspector" style="display: none;">◄ / ►</button>
 
     <div id="sidebar">
+        <div class="text-center mb-4 pb-3 border-bottom">
+            <h4 style="color: #667eea; font-weight: bold; margin-bottom: 8px; font-size: 1.5rem;">🚀 MTE Builder</h4>
+            <small style="color: #aaa; font-size: 0.85rem;">Website Builder by MTE</small>
+        </div>
+        <div class="mb-3 pb-3 border-bottom">
+            <small class="text-muted d-block mb-2">Current Project:</small>
+            <div class="input-group input-group-sm">
+                <select class="form-select form-select-sm" id="projectSelector" onchange="switchProject(this.value)">
+                    <!-- Projects listed here -->
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="showCreateProjectModal()">+</button>
+            </div>
+            <button class="btn btn-outline-info btn-sm w-100 mt-2" onclick="showProjectsDashboard()">🎨 All Projects</button>
+        </div>
+        <h5 class="mb-3">📄 Pages</h5>
+        <div id="pagesList" class="mb-3" style="max-height: 150px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px;">
+            <!-- Pages will be listed here -->
+        </div>
+        <div class="d-grid gap-2 mb-3">
+            <button class="btn btn-success btn-sm" onclick="createNewPage()">+ New Page</button>
+            <button class="btn btn-danger btn-sm" id="deletePageBtn" onclick="deletePage(currentPageId)">🗑️ Delete Page</button>
+        </div>
+        <div class="d-grid gap-2 mb-3">
+            <button class="btn btn-outline-warning btn-sm" id="undoBtn" onclick="undo()" title="Undo (Ctrl+Z)">↶ Undo</button>
+            <button class="btn btn-outline-warning btn-sm" id="redoBtn" onclick="redo()" title="Redo (Ctrl+Y)">↷ Redo</button>
+        </div>
+        <hr>
         <h5 class="mb-4">Components</h5>
         <div class="d-grid gap-2">
-            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('generic')">+ Generic Section</button>
+            <button class="btn btn-outline-info btn-sm text-start" onclick="addSection('layout-fullwidth')">📑 Layout: Full-Width</button>
+            <button class="btn btn-outline-info btn-sm text-start" onclick="addSection('layout-two-column')">📊 Layout: 2-Column</button>
+            <button class="btn btn-outline-info btn-sm text-start" onclick="addSection('layout-three-column')">📈 Layout: 3-Column</button>
+            <button class="btn btn-outline-info btn-sm text-start" onclick="addSection('layout-sidebar')">📌 Layout: Sidebar</button>
+            <hr style="margin: 8px 0;">
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('navbar')">📱 Navbar</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('carousel')">🎠 Carousel</button>
             <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('hero')">+ Hero Section</button>
             <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('cards')">+ Feature Cards</button>
+            <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('dashboard')">+ Dashboard</button>
             <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('gallery')">+ Image Gallery</button>
             <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('testimonials')">+ Testimonials</button>
             <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('stats')">+ Stats Section</button>
@@ -39,19 +109,18 @@
             <button class="btn btn-outline-light btn-sm text-start" onclick="addSection('footer')">+ Footer</button>
         </div>
         <hr>
-        <button class="btn btn-primary w-100 mb-2" onclick="exportPage()">Export HTML</button>
-        <button class="btn btn-secondary w-100" onclick="clearAll()">Clear All Canvas</button>
-        <!-- Fixed bottom bar using Bootstrap navbar -->
-  <nav class="navbar fixed-bottom bg-dark navbar-dark">
-    <div class="container-fluid justify-content-center">
-      <span class="navbar-text text-center">
-        Created by <strong>MTE</strong> • 
-        <a href="tel:+256777233322" class="text-info text-decoration-none">
-          0777 233 322
-        </a>
-      </span>
-    </div>
-  </nav>
+        <button class="btn btn-primary w-100 mb-2" onclick="showExportModal()">Export HTML</button>
+        <button class="btn btn-info w-100 mb-2" onclick="importSite()">📥 Import Site</button>
+        <button class="btn btn-success w-100 mb-2" onclick="openShowcase()">🎨 View Showcase</button>
+        <button class="btn btn-warning w-100 mb-2" onclick="clearCurrentPage()">Clear Page Content</button>
+        <button class="btn btn-danger w-100" onclick="clearAllData()">🗑️ Clear All Data</button>
+        <input type="file" id="siteImportInput" style="display:none;" accept=".html,.zip" onchange="handleFileImport(this.files[0])">
+        <hr>
+        <div class="text-center" style="font-size: 0.9rem;">
+            <p style="margin: 0 0 8px 0; color: #aaa;">Need help? Contact us:</p>
+            <a href="https://wa.me/+256777233322?text=I%20need%20help%20with%20the%20MTE%20Website%20Builder" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: none; font-weight: bold;">💬 WhatsApp Support</a>
+            <p style="margin: 8px 0 0 0; color: #666; font-size: 0.8rem;">+256 777 233 322</p>
+        </div>
     </div>
 
     <div id="canvas-container">
@@ -75,7 +144,11 @@
 
     <div id="heroSettingsContainer" style="display: none;">
         <label class="inspector-label">Hero Background Image URL</label>
-        <input type="text" class="form-control form-control-sm" id="heroBackgroundUrl" placeholder="https://example.com/image.jpg" oninput="updateHeroBackgroundImage(this.value)">
+        <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" id="heroBackgroundUrl" placeholder="https://example.com/image.jpg" oninput="updateHeroBackgroundImage(this.value)">
+            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="triggerFileUpload('heroImageFileUpload')">📁</button>
+        </div>
+        <input type="file" id="heroImageFileUpload" style="display:none;" accept="image/*" onchange="handleImageFileUpload(this, 'hero')">
     </div>
 
     <div id="formSettingsContainer" style="display: none;">
@@ -116,11 +189,31 @@
         <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('image')">+ Image</button>
         <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('button')">+ Button</button>
         <button class="btn btn-sm btn-outline-secondary w-100" onclick="addElement('link')">+ Link</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" id="navItemButton" style="display: none;" onclick="addNavItem()">+ Nav Item</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" id="carouselSlideButton" style="display: none;" onclick="addCarouselSlide()">+ Carousel Slide</button>
         <button class="btn btn-sm btn-outline-secondary w-100" id="cardButton" style="display: none;" onclick="addElement('card')">+ Card</button>
         <button class="btn btn-sm btn-outline-secondary w-100" id="galleryItemButton" style="display: none;" onclick="addElement('gallery-item')">+ Gallery Item</button>
         <button class="btn btn-sm btn-outline-secondary w-100" id="pricingCardButton" style="display: none;" onclick="addPricingCard()">+ Pricing Card</button>
         <button class="btn btn-sm btn-outline-secondary w-100" id="testimonialCardButton" style="display: none;" onclick="addTestimonialCard()">+ Testimonial Card</button>
         <button class="btn btn-sm btn-outline-secondary w-100" id="statItemButton" style="display: none;" onclick="addStatItem()">+ Stat Item</button>
+    </div>
+
+    <label class="inspector-label">Navigation & Linking</label>
+    <div id="navigationContainer" style="display: none;">
+        <div class="mb-3">
+            <label class="form-label form-label-sm">Anchor ID (for linking):</label>
+            <input type="text" class="form-control form-control-sm" id="elementAnchorId" placeholder="e.g., section-about" oninput="updateElementAttribute('id', this.value)">
+            <small class="text-muted d-block mt-1">Create a unique ID to link to this element</small>
+        </div>
+        <div class="mb-3">
+            <label class="form-label form-label-sm">Link to Section:</label>
+            <select class="form-select form-select-sm" id="elementLinkTarget">
+                <option value="">-- Select a target --</option>
+            </select>
+            <small class="text-muted d-block mt-1">Link this element to another section</small>
+        </div>
+        <button class="btn btn-sm btn-info w-100" onclick="applyNavLink()">Apply Link</button>
+        <button class="btn btn-sm btn-secondary w-100 mt-2" onclick="removeNavLink()">Remove Link</button>
     </div>
 
     <div id="form-element-creator" style="display: none;">
@@ -150,7 +243,11 @@
         </div>
         <div class="mb-2" id="elementSrcContainer">
             <label for="elementSrc" class="form-label small">Image URL (src)</label>
-            <input type="text" class="form-control form-control-sm" id="elementSrc" oninput="updateElementAttribute('src', this.value)">
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm" id="elementSrc" oninput="updateElementAttribute('src', this.value)">
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="triggerFileUpload('imageFileUpload')">📁</button>
+            </div>
+            <input type="file" id="imageFileUpload" style="display:none;" accept="image/*" onchange="handleImageFileUpload(this, 'src')">
         </div>
         <div class="mb-2" id="elementHrefContainer">
             <label for="elementHref" class="form-label small">Link URL (href)</label>
@@ -182,7 +279,11 @@
         </div>
         <div class="mb-2" id="elementBgImageContainer" style="display: none;">
             <label class="form-label small">Background Image URL</label>
-            <input type="text" class="form-control form-control-sm" id="elementBgImage" placeholder="https://example.com/image.jpg" oninput="updateSelectedElementStyle('backgroundImage', 'url(' + this.value + ')')">
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm" id="elementBgImage" placeholder="https://example.com/image.jpg" oninput="updateSelectedElementStyle('backgroundImage', 'url(' + this.value + ')')">
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="triggerFileUpload('bgImageFileUpload')">📁</button>
+            </div>
+            <input type="file" id="bgImageFileUpload" style="display:none;" accept="image/*" onchange="handleImageFileUpload(this, 'bgImage')">
         </div>
         <label class="inspector-label">Move Element</label>
         <div class="d-grid gap-2 mb-3">
@@ -260,7 +361,188 @@
     </div>
 </div>
 
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="projectNameInput" class="form-label">Project Name</label>
+                    <input type="text" class="form-control" id="projectNameInput" placeholder="My Awesome Website">
+                </div>
+                <div class="mb-3">
+                    <label for="projectDescInput" class="form-label">Description (optional)</label>
+                    <textarea class="form-control" id="projectDescInput" rows="2" placeholder="Describe your project..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createProject()">Create Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Dashboard Modal -->
+<div class="modal fade" id="projectsDashboardModal" tabindex="-1" style="max-height: 100vh;">
+    <div class="modal-dialog modal-lg" style="max-height: 90vh; overflow-y: auto;">
+        <div class="modal-content">
+            <div class="modal-header bg-light sticky-top">
+                <h5 class="modal-title">🎨 Projects Gallery</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="projectsGallery" class="row g-3">
+                    <!-- Projects will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export Project</h5>
+                <button type="button" class="btn-close" onclick="closeExportModal()"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Project Metadata Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Project Metadata (For Showcase Gallery)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Project Name:</label>
+                            <input type="text" class="form-control" id="exportProjectName" placeholder="e.g., workingv1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Project Description:</label>
+                            <textarea class="form-control" id="exportProjectDescription" rows="2" placeholder="Brief description of your project"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Project Icon (Emoji):</label>
+                            <input type="text" class="form-control" id="exportProjectIcon" placeholder="🎨" maxlength="2" style="max-width: 100px;">
+                            <small class="text-muted">Paste any emoji here</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Folder Path (relative to manifest):</label>
+                            <input type="text" class="form-control" id="exportFolderPath" placeholder="e.g., workingv1">
+                            <small class="text-muted">The folder where exported files will be placed</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pages Selection Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Select Pages to Export</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Export Option:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportOption" id="exportCurrent" value="current" checked>
+                                <label class="form-check-label" for="exportCurrent">
+                                    Current Page Only
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportOption" id="exportSelected" value="selected">
+                                <label class="form-check-label" for="exportSelected">
+                                    Selected Pages
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportOption" id="exportAll" value="all">
+                                <label class="form-check-label" for="exportAll">
+                                    All Pages
+                                </label>
+                            </div>
+                        </div>
+                        <div id="selectedPagesContainer" style="display: none; max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px;">
+                            <!-- Page checkboxes will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Copyright/Watermark Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Copyright Protection</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Authorization Password (Optional):</label>
+                            <input type="password" class="form-control" id="exportPassword" placeholder="Leave blank or enter password to remove watermark">
+                            <small class="text-muted">If left blank, exported site will include contact watermark. Enter correct password to remove it.</small>
+                        </div>
+                        <div class="alert alert-warning mb-0">
+                            <small>
+                                <strong>⚠️ Watermark Info:</strong><br>
+                                Without password: "contact 0777233322" footer will be added to all pages<br>
+                                With correct password: Watermark will be removed from site
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Info -->
+                <div class="alert alert-info mb-0">
+                    <small>
+                        <strong>What will be exported:</strong><br>
+                        ✓ HTML files for selected pages<br>
+                        ✓ Project manifest entry (JSON) for projects-manifest.json<br>
+                        ✓ Asset files (images) organized in assets/ folder
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="exportPages()">Export Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ===== ARCHITECTURE OVERVIEW =====
+    // MTE Website Builder - Optimized Edition
+    // 
+    // CRITICAL WORKFLOW INTEGRATION:
+    // The builder supports three main workflows, all maintained through recent optimizations:
+    // 1. NEW SECTIONS: Click button → addSection() → attach handlers → save to localStorage
+    // 2. IMPORT WORKFLOW: Parse HTML → detectSectionType() → wrap + attach handlers → save
+    // 3. EXPORT WORKFLOW: Extract section-wrappers → remove editing markup → download HTML
+    // 
+    // ELEMENT TYPE SYSTEM (NEW):
+    // - ELEMENT_TYPES constant: Centralized element classification (BLOCK, TEXT, FORM, CLICKABLE)
+    // - isElementType(): Reusable element type checking used throughout
+    // - determineTargetContainer(): Smart nesting logic for layout columns
+    // 
+    // PRESERVED INTEGRATION POINTS:
+    // - attachClickHandlers(): Still works with imported sections (no changes)
+    // - parseAndLoadHTML(): Creates proper section-wrapper structure (no changes)
+    // - saveState(): Captures canvas HTML for all workflows (improved comments)
+    // - detectSectionType(): Identifies imported sections (add new types here if needed)
+    // - populateElementInspector(): Now uses helper functions (same behavior, better code)
+    // 
+    // IMPORT/EXPORT COMPATIBILITY CHECKLIST:
+    // ✓ Section-wrappers still use data-type attributes
+    // ✓ importedSections get proper event handlers via attachClickHandlers()
+    // ✓ saveState() still captures canvas.innerHTML (both new and imported)
+    // ✓ Export still extracts .section-wrapper divs and cleans markup
+    // ✓ Nested elements (including layout columns) work in all workflows
+    // ✓ Carousel IDs, form fields, and special content still function
+    //
+    
     const canvas = document.getElementById('canvas');
     const inspector = document.getElementById('inspector');
     let activeWrapper = null;
@@ -270,12 +552,206 @@
     const elementInspectorDiv = document.getElementById('element-inspector');
     const formElementPropertiesDiv = document.getElementById('form-element-properties');
     const formElementCreator = document.getElementById('form-element-creator');
+    const navItemButton = document.getElementById('navItemButton');
+    const carouselSlideButton = document.getElementById('carouselSlideButton');
     const cardButton = document.getElementById('cardButton');
     const galleryItemButton = document.getElementById('galleryItemButton');
     const pricingCardButton = document.getElementById('pricingCardButton');
     const testimonialCardButton = document.getElementById('testimonialCardButton');
     const statItemButton = document.getElementById('statItemButton');
 
+    // ===== SIDEBAR TOGGLE FUNCTIONALITY =====
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('collapsed');
+    }
+    
+    function toggleInspector() {
+        const inspector = document.getElementById('inspector');
+        inspector.classList.toggle('collapsed');
+    }
+    
+    function showInspectorToggle() {
+        const toggleBtn = document.getElementById('toggleInspectorBtn');
+        if (inspector.style.display !== 'none') {
+            toggleBtn.style.display = 'block';
+        }
+    }
+    // ===== END SIDEBAR TOGGLE FUNCTIONALITY =====
+
+    // ===== PROJECT MANAGEMENT (Builder Only) =====
+    // These are builder projects stored in localStorage for editing within the builder
+    // NOTE: These are SEPARATE from showcase projects (which read from projects-manifest.json)
+    // The showcase page is a standalone gallery that displays projects from /ProjectName/ folders
+    
+    let currentProjectId = null;
+    let projects = {}; // { [projectId]: { id, name, description, createdDate, pages, localFiles } }
+    let projectCounter = 0;
+    
+    // Pages management (within a builder project)
+    let currentPageId = null;
+    let pages = {};
+    let pageCounter = 0;
+    
+    // Local files tracking - maps data URL to file info (for builder images)
+    let localFiles = {}; // { [fileHash]: { filename, dataUrl, type } }
+    
+    // Carousel ID tracking - ensures unique carousel IDs
+    let carouselCounter = 0;
+    
+    // Undo/Redo functionality
+    let undoStack = []; // Store previous states
+    let redoStack = []; // Store states that were undone
+    const MAX_UNDO_HISTORY = 50; // Limit history to prevent memory issues
+    // ===== END PROJECT MANAGEMENT =====
+
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', function(event) {
+        // Ctrl+Z for undo
+        if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+            event.preventDefault();
+            undo();
+        }
+        // Ctrl+Y or Ctrl+Shift+Z for redo
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+            event.preventDefault();
+            redo();
+        }
+    });
+    // ===== END KEYBOARD SHORTCUTS =====
+
+    // ===== ELEMENT TYPE CONSTANTS & HELPERS =====
+    // Centralized element type definitions for reusability across all functions
+    // IMPORTANT: These categories are used throughout the codebase for element classification
+    // Changes here affect: populateElementInspector(), styling controls, form element detection
+    const ELEMENT_TYPES = {
+        BLOCK: ['DIV', 'SECTION', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'BUTTON', 'A', 'LABEL', 'NAV'],
+        TEXT: ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'DIV', 'LABEL', 'BUTTON', 'A'],
+        FORM: ['INPUT', 'TEXTAREA', 'SELECT', 'LABEL'],
+        CLICKABLE: ['A', 'BUTTON', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'DIV', 'SPAN', 'IMG']
+    };
+    
+    // Helper function: Check if element type belongs to a category
+    // Used by: populateElementInspector() selects for styling/properties display
+    function isElementType(tagName, category) {
+        return ELEMENT_TYPES[category] && ELEMENT_TYPES[category].includes(tagName);
+    }
+    
+    // Helper function: Check if wrapper is a layout container
+    // Used by: determineTargetContainer() for nested element placement
+    function isLayoutType(type) {
+        return type && type.startsWith('layout-');
+    }
+    
+    // Helper function: Get the appropriate container for adding elements
+    // CRITICAL: Maintains compatibility with layout nesting
+    // Used by: addSection() for both new sections and imported content
+    function determineTargetContainer(activeWrapper, elementType) {
+        // If no active wrapper or it's not a layout, add to canvas
+        if (!activeWrapper || !isLayoutType(activeWrapper.dataset.type)) {
+            return canvas;
+        }
+        
+        // If active is a layout container, find best target within it
+        const layoutContainer = activeWrapper.querySelector('.layout-container');
+        if (!layoutContainer) return canvas;
+        
+        // For layouts with columns, find appropriate column
+        const columns = layoutContainer.querySelectorAll('.layout-column');
+        if (columns.length > 0) {
+            // Find first empty column, prefer ones with placeholder text
+            let targetColumn = columns[0];
+            for (let col of columns) {
+                const isEmpty = col.innerHTML.trim().includes('📦') && col.children.length <= 1;
+                if (isEmpty) {
+                    targetColumn = col;
+                    break;
+                }
+            }
+            // Clear placeholder when adding first item
+            if (targetColumn.innerHTML.trim().includes('📦')) {
+                targetColumn.innerHTML = '';
+            }
+            return targetColumn;
+        }
+        
+        // For full-width layouts without columns
+        if (layoutContainer.innerHTML.trim().includes('📦')) {
+            layoutContainer.innerHTML = '';
+        }
+        return layoutContainer;
+    }
+    // ===== END ELEMENT TYPE CONSTANTS & HELPERS =====
+
+    // Ensure Bootstrap modal is loaded
+    if (typeof bootstrap === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js';
+        document.head.appendChild(script);
+    }
+    
+    // File handling functions
+    function triggerFileUpload(inputId) {
+        document.getElementById(inputId).click();
+    }
+    
+    function generateFileHash(filename, size) {
+        return `${filename}_${size}_${Date.now()}`;
+    }
+    
+    function handleImageFileUpload(inputElement, type) {
+        const file = inputElement.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            const fileHash = generateFileHash(file.name, file.size);
+            
+            // Store file info
+            localFiles[fileHash] = {
+                filename: file.name,
+                dataUrl: dataUrl,
+                type: file.type,
+                originalName: file.name
+            };
+            
+            // Update the appropriate input field
+            if (type === 'src') {
+                document.getElementById('elementSrc').value = fileHash;
+                if (selectedElement && selectedElement.tagName === 'IMG') {
+                    selectedElement.src = dataUrl;
+                    selectedElement.dataset.fileHash = fileHash;
+                    saveState();
+                }
+            } else if (type === 'bgImage') {
+                document.getElementById('elementBgImage').value = fileHash;
+                if (selectedElement) {
+                    selectedElement.style.backgroundImage = `url('${dataUrl}')`;
+                    selectedElement.dataset.bgFileHash = fileHash;
+                    saveState();
+                }
+            } else if (type === 'hero') {
+                document.getElementById('heroBackgroundUrl').value = fileHash;
+                if (activeWrapper && activeWrapper.dataset.type === 'hero') {
+                    const target = activeWrapper.querySelector('section');
+                    const gradientMatch = target.style.backgroundImage.match(/(linear-gradient\([^,]+,[^)]+\)),\s*url\([^)]+\)/);
+                    if (gradientMatch) {
+                        target.style.backgroundImage = `${gradientMatch[1]}, url('${dataUrl}')`;
+                    } else {
+                        target.style.backgroundImage = `url('${dataUrl}')`;
+                    }
+                    target.dataset.bgFileHash = fileHash;
+                    saveState();
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+        
+        // Reset input
+        inputElement.value = '';
+    }
+    
     const templates = {
         generic: `<section class="py-3 text-center bg-light" style="color: #000000;">
             <div class="container">
@@ -459,45 +935,825 @@
                 </div>
             </div>
         </section>`,
+        dashboard: `<section class="py-5" style="background-color: #f5f7fa;">
+            <div class="container-fluid px-4">
+                <h2 class="mb-4" contenteditable="true">Dashboard</h2>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Total Users</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">12,543</h3>
+                                <small class="text-success" contenteditable="true">↑ 12% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Revenue</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">$45,231</h3>
+                                <small class="text-success" contenteditable="true">↑ 8% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Conversion Rate</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">3.24%</h3>
+                                <small class="text-danger" contenteditable="true">↓ 2% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small" contenteditable="true">Active Sessions</h6>
+                                <h3 class="mt-3 mb-0" contenteditable="true">892</h3>
+                                <small class="text-success" contenteditable="true">↑ 24% from last month</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h6 class="mb-0" contenteditable="true">Monthly Sales</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small" contenteditable="true">[Chart placeholder - Add your chart here]</p>
+                                <div style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; opacity: 0.3;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h6 class="mb-0" contenteditable="true">Top Products</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small contenteditable="true">Product A</small>
+                                        <small contenteditable="true">45%</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar" style="width: 45%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small contenteditable="true">Product B</small>
+                                        <small contenteditable="true">30%</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" style="width: 30%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small contenteditable="true">Product C</small>
+                                        <small contenteditable="true">25%</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-warning" style="width: 25%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h6 class="mb-0" contenteditable="true">Recent Transactions</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 30%;" contenteditable="true">Customer</th>
+                                                <th style="width: 30%;" contenteditable="true">Product</th>
+                                                <th style="width: 20%;" contenteditable="true">Amount</th>
+                                                <th style="width: 20%;" contenteditable="true">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td contenteditable="true">John Smith</td>
+                                                <td contenteditable="true">Pro Plan</td>
+                                                <td contenteditable="true">$99.00</td>
+                                                <td><span class="badge bg-success">Completed</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td contenteditable="true">Jane Doe</td>
+                                                <td contenteditable="true">Basic Plan</td>
+                                                <td contenteditable="true">$29.00</td>
+                                                <td><span class="badge bg-info">Pending</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td contenteditable="true">Mike Johnson</td>
+                                                <td contenteditable="true">Enterprise</td>
+                                                <td contenteditable="true">$299.00</td>
+                                                <td><span class="badge bg-success">Completed</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>`,
         form: `<section class="py-5 bg-light">
             <div class="container">
                 <h2 class="text-center mb-4" contenteditable="true">Contact Us</h2>
                 <form></form>
             </div>
         </section>`,
+        navbar: `<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#" contenteditable="true">Your Brand</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="#" contenteditable="true">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" contenteditable="true">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" contenteditable="true">Services</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" contenteditable="true">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>`,
+        carousel: `<section class="py-0">
+            <div id="carousel-UNIQUE_ID" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#carousel-UNIQUE_ID" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                    <button type="button" data-bs-target="#carousel-UNIQUE_ID" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                    <button type="button" data-bs-target="#carousel-UNIQUE_ID" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                </div>
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img src="https://picsum.photos/id/10/1200/400" class="d-block w-100" alt="Slide 1" style="height: 400px; object-fit: cover;">
+                        <div class="carousel-caption d-none d-md-block">
+                            <h5 contenteditable="true">First Slide</h5>
+                            <p contenteditable="true">Add your caption here</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://picsum.photos/id/11/1200/400" class="d-block w-100" alt="Slide 2" style="height: 400px; object-fit: cover;">
+                        <div class="carousel-caption d-none d-md-block">
+                            <h5 contenteditable="true">Second Slide</h5>
+                            <p contenteditable="true">Add your caption here</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://picsum.photos/id/12/1200/400" class="d-block w-100" alt="Slide 3" style="height: 400px; object-fit: cover;">
+                        <div class="carousel-caption d-none d-md-block">
+                            <h5 contenteditable="true">Third Slide</h5>
+                            <p contenteditable="true">Add your caption here</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#carousel-UNIQUE_ID" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carousel-UNIQUE_ID" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </section>`,
         footer: `<footer class="py-4 bg-dark text-white text-center">
             <div class="container">
                 <p class="mb-0 small" contenteditable="true">© 2026 Your Company. All rights reserved.</p>
             </div>
-        </footer>`
+        </footer>`,
+        'layout-fullwidth': `<section class="py-5" style="background-color: #ffffff;">
+            <div class="container-fluid layout-container" style="display: block; min-height: 200px; padding: 20px; border: 2px dashed #ccc; border-radius: 4px;">
+                <p style="color: #999; text-align: center; margin: 0;">📦 Full-Width Layout Container - Add sections here</p>
+            </div>
+        </section>`,
+        'layout-two-column': `<section class="py-5" style="background-color: #f8f9fa;">
+            <div class="layout-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; min-height: 200px; padding: 20px; border: 2px dashed #ccc; border-radius: 4px;">
+                <div class="layout-column" style="padding: 15px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <p style="color: #999; margin: 0;">📦 Column 1</p>
+                </div>
+                <div class="layout-column" style="padding: 15px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <p style="color: #999; margin: 0;">📦 Column 2</p>
+                </div>
+            </div>
+        </section>`,
+        'layout-three-column': `<section class="py-5" style="background-color: #f8f9fa;">
+            <div class="layout-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; min-height: 200px; padding: 20px; border: 2px dashed #ccc; border-radius: 4px;">
+                <div class="layout-column" style="padding: 15px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <p style="color: #999; margin: 0;">📦 Column 1</p>
+                </div>
+                <div class="layout-column" style="padding: 15px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <p style="color: #999; margin: 0;">📦 Column 2</p>
+                </div>
+                <div class="layout-column" style="padding: 15px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <p style="color: #999; margin: 0;">📦 Column 3</p>
+                </div>
+            </div>
+        </section>`,
+        'layout-sidebar': `<section class="py-5" style="background-color: #f8f9fa;">
+            <div class="layout-container" style="display: flex; gap: 20px; min-height: 200px; padding: 20px; border: 2px dashed #ccc; border-radius: 4px;">
+                <div class="layout-column" style="flex: 1; padding: 15px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <p style="color: #999; margin: 0;">📦 Main Content</p>
+                </div>
+                <div class="layout-column" style="flex: 0 0 250px; padding: 15px; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <p style="color: #999; margin: 0;">📦 Sidebar</p>
+                </div>
+            </div>
+        </section>`
     };
 
-    // --- Persistence Functions (Simplified) ---
+    // ===== PERSISTENCE FUNCTIONS (Builder Projects) =====
+    // Manages saving/loading builder projects from localStorage
+    // This is independent from the Showcase Gallery which uses projects-manifest.json
+    // CRITICAL: saveState() is called by EVERY content-modifying operation:
+    // - addSection() - adding new sections
+    // - parseAndLoadHTML() - importing pages
+    // - selectElement() editing workflows (via blur handlers)
+    // - undo/redo operations
+    // This ensures all changes (new, imported, edited) are persisted
+    
     function saveState() {
-        localStorage.setItem('simplifiedBuilderState', canvas.innerHTML);
+        // Save current canvas content to current page
+        // This captures all section-wrapper divs and their content
+        // The content includes: layout templates, nested elements, styling, text edits
+        if (currentPageId) {
+            pages[currentPageId].content = canvas.innerHTML;
+            saveProjectState();
+            updateUndoRedoButtons();
+        }
+    }
+
+    function pushToUndoStack() {
+        // Save current state to undo stack before making changes
+        if (currentPageId) {
+            const currentState = canvas.innerHTML;
+            undoStack.push(currentState);
+            
+            // Limit undo history
+            if (undoStack.length > MAX_UNDO_HISTORY) {
+                undoStack.shift();
+            }
+            
+            // Clear redo stack when new action is performed
+            redoStack = [];
+            updateUndoRedoButtons();
+        }
+    }
+    
+    function undo() {
+        if (undoStack.length === 0) {
+            alert('Nothing to undo');
+            return;
+        }
+        
+        // Save current state to redo stack
+        if (currentPageId) {
+            redoStack.push(canvas.innerHTML);
+        }
+        
+        // Restore previous state
+        const previousState = undoStack.pop();
+        canvas.innerHTML = previousState;
+        
+        // Reattach handlers to all sections
+        canvas.querySelectorAll('.section-wrapper').forEach(wrapper => {
+            attachClickHandlers(wrapper);
+        });
+        
+        // Save to page content
+        if (currentPageId) {
+            pages[currentPageId].content = canvas.innerHTML;
+            saveProjectState();
+        }
+        
+        deselect();
+        updateUndoRedoButtons();
+    }
+    
+    function redo() {
+        if (redoStack.length === 0) {
+            alert('Nothing to redo');
+            return;
+        }
+        
+        // Save current state to undo stack
+        if (currentPageId) {
+            undoStack.push(canvas.innerHTML);
+        }
+        
+        // Restore next state
+        const nextState = redoStack.pop();
+        canvas.innerHTML = nextState;
+        
+        // Reattach handlers to all sections
+        canvas.querySelectorAll('.section-wrapper').forEach(wrapper => {
+            attachClickHandlers(wrapper);
+        });
+        
+        // Save to page content
+        if (currentPageId) {
+            pages[currentPageId].content = canvas.innerHTML;
+            saveProjectState();
+        }
+        
+        deselect();
+        updateUndoRedoButtons();
+    }
+    
+    function updateUndoRedoButtons() {
+        // Update button states based on stack availability
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        
+        if (undoBtn) {
+            undoBtn.disabled = undoStack.length === 0;
+            undoBtn.style.opacity = undoStack.length === 0 ? '0.5' : '1';
+        }
+        
+        if (redoBtn) {
+            redoBtn.disabled = redoStack.length === 0;
+            redoBtn.style.opacity = redoStack.length === 0 ? '0.5' : '1';
+        }
+    }
+
+    // ===== NAVIGATION & LINKING FUNCTIONS =====
+    function updateNavLinkTargets() {
+        const select = document.getElementById('elementLinkTarget');
+        // Keep the first option (placeholder)
+        const firstOption = select.querySelector('option:first-child');
+        if (firstOption) {
+            select.innerHTML = '';
+            select.appendChild(firstOption);
+        } else {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '-- Select a target --';
+            select.innerHTML = '';
+            select.appendChild(opt);
+        }
+        
+        // Add all sections with IDs as options
+        document.querySelectorAll('.section-wrapper').forEach((wrapper, index) => {
+            const section = wrapper.querySelector('section, footer, nav');
+            if (section) {
+                const anchorId = section.id || `section-${index + 1}`;
+                if (!section.id) section.id = anchorId;
+                const option = document.createElement('option');
+                option.value = '#' + anchorId;
+                option.textContent = anchorId;
+                select.appendChild(option);
+            }
+        });
+    }
+    
+    function applyNavLink() {
+        if (!selectedElement) {
+            alert('Please select an element first');
+            return;
+        }
+        const targetLink = document.getElementById('elementLinkTarget').value;
+        if (!targetLink) {
+            alert('Please select a target section');
+            return;
+        }
+        
+        if (selectedElement.tagName === 'A') {
+            selectedElement.href = targetLink;
+        } else {
+            // Make element clickable
+            selectedElement.style.cursor = 'pointer';
+            selectedElement.onclick = (e) => {
+                e.stopPropagation();
+                const targetId = targetLink.substring(1);
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+        }
+        saveState();
+        alert('✓ Link applied successfully!');
+    }
+    
+    function removeNavLink() {
+        if (!selectedElement) return;
+        if (selectedElement.tagName === 'A') {
+            selectedElement.href = '#';
+        } else {
+            selectedElement.onclick = null;
+            selectedElement.style.cursor = '';
+        }
+        document.getElementById('elementLinkTarget').value = '';
+        saveState();
+        alert('Link removed');
+    }
+    // ===== END NAVIGATION & LINKING FUNCTIONS =====
+
+    // Initialize carousel IDs - ensures all carousels have unique, valid IDs
+    function initializeCarouselIds() {
+        document.querySelectorAll('.section-wrapper[data-type="carousel"]').forEach(wrapper => {
+            // Check if carousel already has a valid ID
+            const carousel = wrapper.querySelector('[id^="carousel-"]');
+            if (!carousel) return; // Skip if no carousel element found
+            
+            const currentId = carousel.id;
+            let carouselId = wrapper.dataset.carouselId;
+            
+            // If no dataset ID or it doesn't match, assign a new one
+            if (!carouselId || !currentId.startsWith(carouselId)) {
+                carouselCounter++;
+                carouselId = 'carousel-' + carouselCounter;
+                wrapper.dataset.carouselId = carouselId;
+                
+                // Update carousel element ID
+                carousel.id = carouselId;
+                
+                // Update all data-bs-target and data-bs-slide references
+                wrapper.querySelectorAll('[data-bs-target]').forEach(el => {
+                    el.setAttribute('data-bs-target', '#' + carouselId);
+                });
+            }
+        });
     }
 
     function attachClickHandlers(wrapper) {
+        // Section-level hover effects
+        wrapper.onmouseover = (e) => {
+            if (e.target === wrapper || e.target.closest('.section-wrapper') === wrapper) {
+                // Only show hover on the wrapper itself, not when hovering child elements
+                if (e.target === wrapper) {
+                    wrapper.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.2)';
+                }
+            }
+        };
+        
+        wrapper.onmouseout = (e) => {
+            if (e.target === wrapper) {
+                wrapper.style.boxShadow = '';
+            }
+        };
+        
+        // Click handler
         wrapper.onclick = (e) => handleWrapperClick(e, wrapper);
+        
+        // Content editable blur handlers
         wrapper.querySelectorAll('[contenteditable]').forEach(el => {
             el.onblur = saveState;
         });
+        
+        // Add hover and click handlers to all child elements
+        // This ensures navbar elements (a, button, div, etc.) can be styled using the element inspector
         wrapper.querySelectorAll('*').forEach(el => {
-            if (!el.classList.contains('section-wrapper') && el.tagName !== 'SECTION' && el.tagName !== 'DIV' && el !== wrapper && el.parentElement !== wrapper) {
+            if (!el.classList.contains('section-wrapper') && el.tagName !== 'SECTION' && el !== wrapper) {
+                // Click handler - allows selecting any element for styling
                 el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+                
+                // Hover handlers for element highlighting
+                el.onmouseover = (e) => {
+                    if (e.target === el) {
+                        el.classList.add('element-hover-highlight');
+                    }
+                };
+                
+                el.onmouseout = (e) => {
+                    if (e.target === el) {
+                        el.classList.remove('element-hover-highlight');
+                    }
+                };
             }
         });
     }
 
     function loadLocalState() {
-        const savedState = localStorage.getItem('simplifiedBuilderState');
-        if (savedState) {
-            canvas.innerHTML = savedState;
-            canvas.querySelectorAll('.section-wrapper').forEach(attachClickHandlers);
+        // Load all projects
+        const savedProjects = localStorage.getItem('pageBuilderProjects');
+        if (savedProjects) {
+            projects = JSON.parse(savedProjects);
+        }
+        
+        // Load current project or create default
+        let savedProjectId = localStorage.getItem('currentProjectId');
+        if (savedProjectId && projects[savedProjectId]) {
+            currentProjectId = savedProjectId;
+        } else {
+            const projectIds = Object.keys(projects);
+            if (projectIds.length > 0) {
+                currentProjectId = projectIds[0];
+            } else {
+                // Create default project
+                projectCounter++;
+                const projectId = 'proj-' + projectCounter;
+                projects[projectId] = {
+                    id: projectId,
+                    name: 'My First Project',
+                    description: '',
+                    createdDate: new Date().toISOString(),
+                    pages: {},
+                    localFiles: {}
+                };
+                currentProjectId = projectId;
+                localStorage.setItem('pageBuilderProjects', JSON.stringify(projects));
+                localStorage.setItem('currentProjectId', currentProjectId);
+            }
+        }
+        
+        refreshProjectSelector();
+        loadProject(currentProjectId);
+    }
+    
+    function saveProjectState() {
+        if (currentProjectId && projects[currentProjectId]) {
+            projects[currentProjectId].pages = pages;
+            projects[currentProjectId].localFiles = localFiles;
+            localStorage.setItem('pageBuilderProjects', JSON.stringify(projects));
+            localStorage.setItem('currentProjectId', currentProjectId);
         }
     }
-    window.onload = loadLocalState;
-    // --- END Persistence Functions ---
+    
+    function loadProject(projectId) {
+        if (projectId && projects[projectId]) {
+            currentProjectId = projectId;
+            const project = projects[projectId];
+            pages = project.pages || {};
+            localFiles = project.localFiles || {};
+            
+            canvas.innerHTML = '';
+            currentPageId = null;
+            
+            const pageIds = Object.keys(pages);
+            if (pageIds.length > 0) {
+                loadPage(pageIds[0]);
+            } else {
+                createNewPage();
+            }
+            
+            refreshProjectSelector();
+        }
+    }
+    
+    function createProject(projectName) {
+        let name = projectName;
+        if (!name) {
+            const inputName = document.getElementById('projectNameInput').value.trim();
+            const inputDesc = document.getElementById('projectDescInput').value.trim();
+            
+            if (!inputName) {
+                alert('Please enter a project name');
+                return;
+            }
+            name = inputName;
+            
+            try {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createProjectModal'));
+                if (modal) modal.hide();
+            } catch (e) {}
+        }
+        
+        projectCounter++;
+        const projectId = 'proj-' + projectCounter;
+        projects[projectId] = {
+            id: projectId,
+            name: name,
+            description: document.getElementById('projectDescInput')?.value.trim() || '',
+            createdDate: new Date().toISOString(),
+            pages: {},
+            localFiles: {}
+        };
+        
+        currentProjectId = projectId;
+        pages = {};
+        localFiles = {};
+        
+        // Create first page in new project
+        pageCounter = 0;
+        createNewPage();
+        
+        saveProjectState();
+        refreshProjectSelector();
+        
+        // Clear form inputs
+        document.getElementById('projectNameInput').value = '';
+        document.getElementById('projectDescInput').value = '';
+    }
+    
+    function switchProject(projectId) {
+        if (projectId && projects[projectId]) {
+            saveProjectState();
+            loadProject(projectId);
+            closeInspector();
+        }
+    }
+    
+    function deleteProject(projectId) {
+        if (Object.keys(projects).length === 1) {
+            alert('You must have at least one project!');
+            return;
+        }
+        
+        if (confirm(`Delete project \"${projects[projectId].name}\"? This cannot be undone.`)) {
+            delete projects[projectId];
+            
+            if (currentProjectId === projectId) {
+                const projectIds = Object.keys(projects);
+                currentProjectId = projectIds[0];
+                loadProject(currentProjectId);
+            }
+            
+            saveProjectState();
+            refreshProjectSelector();
+            refreshProjectsDashboard();
+        }
+    }
+    
+    function renameProject(projectId) {
+        const newName = prompt('Enter new project name:', projects[projectId].name);
+        if (newName && newName.trim()) {
+            projects[projectId].name = newName.trim();
+            saveProjectState();
+            refreshProjectSelector();
+            refreshProjectsDashboard();
+        }
+    }
+    
+    function refreshProjectSelector() {
+        const selector = document.getElementById('projectSelector');
+        selector.innerHTML = '';
+        Object.keys(projects).forEach(projectId => {
+            const option = document.createElement('option');
+            option.value = projectId;
+            option.textContent = projects[projectId].name;
+            if (projectId === currentProjectId) {
+                option.selected = true;
+            }
+            selector.appendChild(option);
+        });
+    }
+    
+    function showCreateProjectModal() {
+        document.getElementById('projectNameInput').value = '';
+        document.getElementById('projectDescInput').value = '';
+        const modal = new bootstrap.Modal(document.getElementById('createProjectModal'));
+        modal.show();
+    }
+    
+    function showProjectsDashboard() {
+        refreshProjectsDashboard();
+        const modal = new bootstrap.Modal(document.getElementById('projectsDashboardModal'));
+        modal.show();
+    }
+    
+    function refreshProjectsDashboard() {
+        const gallery = document.getElementById('projectsGallery');
+        gallery.innerHTML = '';
+        
+        Object.keys(projects).forEach(projectId => {
+            const project = projects[projectId];
+            const pageCount = Object.keys(project.pages || {}).length;
+            const createdDate = new Date(project.createdDate).toLocaleDateString();
+            
+            const card = document.createElement('div');
+            card.className = 'col-md-6 col-lg-4';
+            card.innerHTML = `
+                <div class="card h-100 shadow-sm border-0 project-card" style="cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 120px; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                        🎨
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">${escapeHtml(project.name)}</h5>
+                        <p class="card-text text-muted small">${project.description ? escapeHtml(project.description) : 'No description'}</p>
+                        <div class="d-flex justify-content-between align-items-center text-muted mb-3" style="font-size: 0.85rem;">
+                            <span>📄 ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}</span>
+                            <span>${createdDate}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 pt-0">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-sm btn-primary" onclick="switchProjectAndCloseModal('${projectId}')">✏️ Open & Edit</button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="renameProject('${projectId}')">Rename</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteProject('${projectId}')">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            gallery.appendChild(card);
+        });
+    }
+    
+    function switchProjectAndCloseModal(projectId) {
+        switchProject(projectId);
+        try {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('projectsDashboardModal'));
+            if (modal) modal.hide();
+        } catch (e) {}
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function loadPage(pageId) {
+        if (pages[pageId]) {
+            currentPageId = pageId;
+            canvas.innerHTML = pages[pageId].content || '';
+            canvas.querySelectorAll('.section-wrapper').forEach(attachClickHandlers);
+            initializeCarouselIds();
+            closeInspector();
+            refreshPagesList();
+        }
+    }
+    
+    function createNewPage() {
+        let pageName = prompt('Enter page name:', 'Page ' + (Object.keys(pages).length + 1));
+        if (!pageName || !pageName.trim()) {
+            pageName = 'Page ' + (Object.keys(pages).length + 1);
+        }
+        pageCounter++;
+        const pageId = 'page-' + pageCounter;
+        pages[pageId] = { name: pageName.trim(), content: '' };
+        currentPageId = pageId;
+        canvas.innerHTML = '';
+        closeInspector();
+        saveState();
+        refreshPagesList();
+    }
+    
+    function renamePage(pageId) {
+        const newName = prompt('Enter new page name:', pages[pageId].name);
+        if (newName && newName.trim()) {
+            pages[pageId].name = newName.trim();
+            saveState();
+            refreshPagesList();
+        }
+    }
+    
+    function deletePage(pageId) {
+        if (Object.keys(pages).length === 1) {
+            alert('You must have at least one page!');
+            return;
+        }
+        if (confirm('Are you sure you want to delete this page?')) {
+            delete pages[pageId];
+            const pageIds = Object.keys(pages);
+            currentPageId = pageIds[0];
+            loadPage(currentPageId);
+            saveState();
+        }
+    }
+    
+    function refreshPagesList() {
+        const pagesList = document.getElementById('pagesList');
+        pagesList.innerHTML = '';
+        Object.keys(pages).forEach(pageId => {
+            const page = pages[pageId];
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm w-100 mb-2 ' + (currentPageId === pageId ? 'btn-primary' : 'btn-outline-light');
+            btn.textContent = page.name;
+            btn.style.textAlign = 'left';
+            btn.ondblclick = () => renamePage(pageId);
+            btn.onclick = () => loadPage(pageId);
+            pagesList.appendChild(btn);
+        });
+    }
+    
+    function setPageLayout(layoutType) {
+        // This function is deprecated - layouts are now added as sections
+        // Keeping for backwards compatibility
+    }
+    
+    function applyLayoutToCanvas(layoutType) {
+        // This function is deprecated - layouts are now added as sections
+        // Keeping for backwards compatibility
+    }
+    
+    function loadPageLayout() {
+        // Layout system changed to section-based templates
+        // No page-level layout loading needed
+    }
+    
+    window.onload = function() {
+        loadLocalState();
+    };
+    
+    // Original onload assignment modified above
 
     // Centralized click handler for section wrappers to distinguish between section and element clicks
     function handleWrapperClick(e, wrapper) {
@@ -512,15 +1768,41 @@
     }
 
     function addSection(type) {
+        // This function is used for:
+        // 1. Adding new sections from sidebar buttons
+        // 2. Re-adding sections after undo/redo
+        // 3. Adding sections when importing pages (indirectly via parseAndLoadHTML)
+        // All use cases depend on proper handler attachment and state saving
+        pushToUndoStack();
         const wrapper = document.createElement('div');
         wrapper.className = 'section-wrapper';
         wrapper.dataset.type = type;
-        wrapper.innerHTML = `\n            ${templates[type]}`;
-
-        canvas.appendChild(wrapper);
-        attachClickHandlers(wrapper);
-        saveState();
+        
+        let sectionHtml = templates[type];
+        
+        // Generate unique carousel ID if adding a carousel
+        if (type === 'carousel') {
+            carouselCounter++;
+            const carouselId = 'carousel-' + carouselCounter;
+            wrapper.dataset.carouselId = carouselId;
+            sectionHtml = sectionHtml.replace(/carousel-UNIQUE_ID/g, carouselId);
+        }
+        
+        wrapper.innerHTML = `\n            ${sectionHtml}`;
+        
+        // Use centralized helper to determine where to add element
+        // This now allows ANY element type to be added to layouts, improving flexibility
+        let targetContainer = determineTargetContainer(activeWrapper, type);
+        
+        targetContainer.appendChild(wrapper);
+        attachClickHandlers(wrapper);  // Critical: must attach handlers for editing to work
+        saveState();  // Critical: persist to localStorage
         selectSection(wrapper);
+    }
+    
+    function applyLayoutStylingToSection(wrapper, layoutType) {
+        // This function is kept for backwards compatibility but is no longer actively used
+        // Layout styling is now handled by the layout templates themselves
     }
 
     function selectSection(wrapper) {
@@ -532,6 +1814,10 @@
 
         activeWrapper = wrapper;
         activeWrapper.classList.add('active');
+        
+        // Auto-scroll to the selected section
+        wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
         inspector.style.display = 'block';
         elementInspectorDiv.style.display = 'none';
         formElementPropertiesDiv.style.display = 'none';
@@ -542,6 +1828,8 @@
         // Show/hide section-specific controls based on type
         const sectionType = wrapper.dataset.type;
         formElementCreator.style.display = sectionType === 'form' ? 'block' : 'none';
+        navItemButton.style.display = sectionType === 'navbar' ? 'block' : 'none';
+        carouselSlideButton.style.display = sectionType === 'carousel' ? 'block' : 'none';
         cardButton.style.display = sectionType === 'cards' ? 'block' : 'none';
         galleryItemButton.style.display = sectionType === 'gallery' ? 'block' : 'none';
         pricingCardButton.style.display = sectionType === 'pricing' ? 'block' : 'none';
@@ -591,6 +1879,10 @@
         }
         selectedElement = element;
         selectedElement.classList.add('selected-element-highlight');
+        
+        // Auto-scroll to the selected element
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
         inspector.style.display = 'block';
         populateElementInspector();
 
@@ -613,91 +1905,71 @@
         }
     }
 
-    function populateElementInspector() {
-        const elementInspectorDiv = document.getElementById('element-inspector');
-        const formElementPropertiesDiv = document.getElementById('form-element-properties');
-        const formSettingsPropertiesDiv = document.getElementById('form-settings-properties');
-        const selectParentCardBtn = document.getElementById('selectParentCardBtn');
-        const duplicateElementBtn = document.getElementById('duplicateElementBtn');
+    // Helper: Hide all inspector control containers
+    function hideAllInspectorControls() {
+        const containers = [
+            'element-inspector', 'form-element-properties', 'form-settings-properties',
+            'elementBgColorContainer', 'elementTextColorContainer', 'elementBgImageContainer',
+            'elementSrcContainer', 'elementHrefContainer', 'elementTextContentContainer',
+            'elementFontSizeContainer', 'elementTextAlignContainer', 'navigationContainer'
+        ];
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+    
+    // Helper: Populate styling controls based on element type
+    function populateStylingControls() {
         const bgColorContainer = document.getElementById('elementBgColorContainer');
         const textColorContainer = document.getElementById('elementTextColorContainer');
         const bgImageContainer = document.getElementById('elementBgImageContainer');
+        const fontSizeContainer = document.getElementById('elementFontSizeContainer');
+        const textAlignContainer = document.getElementById('elementTextAlignContainer');
         
-        if (!selectedElement) {
-            elementInspectorDiv.style.display = 'none';
-            formElementPropertiesDiv.style.display = 'none';
-            formSettingsPropertiesDiv.style.display = 'none';
-            selectParentCardBtn.style.display = 'none';
-            duplicateElementBtn.style.display = 'none';
-            bgColorContainer.style.display = 'none';
-            textColorContainer.style.display = 'none';
-            bgImageContainer.style.display = 'none';
-            return;
-        }
-
-        // Check if selectedElement is inside a card
-        const parentCard = selectedElement.closest('.card');
-        selectParentCardBtn.style.display = parentCard ? 'block' : 'none';
+        const isBlockElement = isElementType(selectedElement.tagName, 'BLOCK');
+        const isTextElement = isElementType(selectedElement.tagName, 'TEXT');
         
-        // Show duplicate button for all elements that can be duplicated
-        duplicateElementBtn.style.display = 'block';
-
-        // Hide section form settings and form element property fields initially
-        formSettingsPropertiesDiv.style.display = 'none';
-        formElementPropertiesDiv.style.display = 'none';
-        hideFormFieldContainers();
-
-        // Show/hide styling controls based on element type
-        const isBlockElement = ['DIV', 'SECTION', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'BUTTON', 'A', 'LABEL'].includes(selectedElement.tagName);
-        const isTextElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'DIV', 'LABEL', 'BUTTON'].includes(selectedElement.tagName);
-        
-        // Show background color for block elements (except images)
+        // Background color for block elements
         bgColorContainer.style.display = (isBlockElement && selectedElement.tagName !== 'IMG') ? 'block' : 'none';
         if (bgColorContainer.style.display === 'block') {
             document.getElementById('elementBgColor').value = rgbToHex(window.getComputedStyle(selectedElement).backgroundColor);
         }
         
-        // Show text color for text elements
+        // Text color for text elements
         textColorContainer.style.display = isTextElement ? 'block' : 'none';
         if (textColorContainer.style.display === 'block') {
             document.getElementById('elementTextColor').value = rgbToHex(window.getComputedStyle(selectedElement).color);
         }
         
-        // Show background image for most elements except images
+        // Background image
         bgImageContainer.style.display = (selectedElement.tagName !== 'IMG') ? 'block' : 'none';
         if (bgImageContainer.style.display === 'block') {
             const bgImage = window.getComputedStyle(selectedElement).backgroundImage;
             const urlMatch = bgImage.match(/url\((['"]?)(.+?)\1\)/);
             document.getElementById('elementBgImage').value = urlMatch ? urlMatch[2] : '';
         }
-
-        // Hide/show text formatting controls
-        const fontSizeContainer = document.getElementById('elementFontSizeContainer');
-        const textAlignContainer = document.getElementById('elementTextAlignContainer');
-        const isTextElement2 = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'DIV', 'LABEL', 'BUTTON'].includes(selectedElement.tagName);
         
+        // Text formatting
         fontSizeContainer.style.display = isTextElement ? 'block' : 'none';
         textAlignContainer.style.display = isTextElement ? 'block' : 'none';
-        
         if (isTextElement) {
             const computedStyle = window.getComputedStyle(selectedElement);
             const fontSize = computedStyle.fontSize.replace('px', '');
             document.getElementById('elementFontSize').value = fontSize;
         }
-
-        // General element properties
-        document.getElementById('elementId').value = selectedElement.id;
-        document.getElementById('elementClass').value = selectedElement.className;
-
+    }
+    
+    // Helper: Populate element-specific controls (IMG, A, contenteditable, etc.)
+    function populateElementSpecificControls() {
         const srcContainer = document.getElementById('elementSrcContainer');
         const hrefContainer = document.getElementById('elementHrefContainer');
         const textContentContainer = document.getElementById('elementTextContentContainer');
-
-        // Reset visibility
+        
         srcContainer.style.display = 'none';
         hrefContainer.style.display = 'none';
         textContentContainer.style.display = 'none';
-
+        
         if (selectedElement.tagName === 'IMG') {
             srcContainer.style.display = 'block';
             document.getElementById('elementSrc').value = selectedElement.src;
@@ -708,64 +1980,103 @@
             document.getElementById('elementTextContent').value = selectedElement.textContent;
         } else if (selectedElement.hasAttribute('contenteditable')) {
             textContentContainer.style.display = 'block';
-            document.getElementById('elementTextContent').value = selectedElement.innerHTML; // Use innerHTML for rich contenteditable
-        }
-
-        // Make sure textContent is always editable if the element itself is editable
-        if (selectedElement.hasAttribute('contenteditable')) {
-            textContentContainer.style.display = 'block';
             document.getElementById('elementTextContent').value = selectedElement.innerHTML;
-        } else if (!srcContainer.style.display === 'block' && !hrefContainer.style.display === 'block') {
-            // If it's not an image or link, but has text, allow editing
-            if (selectedElement.children.length === 0 && selectedElement.textContent.trim().length > 0) {
-                 textContentContainer.style.display = 'block';
-                 document.getElementById('elementTextContent').value = selectedElement.textContent;
-            }
+        } else if (selectedElement.children.length === 0 && selectedElement.textContent.trim().length > 0) {
+            textContentContainer.style.display = 'block';
+            document.getElementById('elementTextContent').value = selectedElement.textContent;
         }
-
-        // Form element specific properties - ONLY for form elements inside forms, not design buttons
+    }
+    
+    // Helper: Populate form-specific controls
+    function populateFormElementControls() {
+        const formElementPropertiesDiv = document.getElementById('form-element-properties');
+        const textContentContainer = document.getElementById('elementTextContentContainer');
         const isInForm = selectedElement.closest('form') !== null;
-        if ((selectedElement.tagName === 'INPUT' || selectedElement.tagName === 'TEXTAREA' || selectedElement.tagName === 'SELECT' || selectedElement.tagName === 'LABEL') && isInForm) {
-            formElementPropertiesDiv.style.display = 'block';
-            document.getElementById('formElementName').parentElement.style.display = 'block';
-            document.getElementById('formElementName').value = selectedElement.name || '';
-
-            if (selectedElement.tagName === 'INPUT') {
-                document.getElementById('formElementTypeContainer').style.display = 'block';
-                document.getElementById('formElementType').value = selectedElement.type || 'text';
-
-                if (selectedElement.type === 'text' || selectedElement.type === 'email' || selectedElement.type === 'password' || selectedElement.type === 'number') {
-                    document.getElementById('formElementPlaceholderContainer').style.display = 'block';
-                    document.getElementById('formElementPlaceholder').value = selectedElement.placeholder || '';
-                    document.getElementById('formElementValueContainer').style.display = 'block';
-                    document.getElementById('formElementValue').value = selectedElement.value || '';
-                } else if (selectedElement.type === 'checkbox' || selectedElement.type === 'radio') {
-                    document.getElementById('formElementValueContainer').style.display = 'block';
-                    document.getElementById('formElementValue').value = selectedElement.value || '';
-                    document.getElementById('formElementCheckedContainer').style.display = 'block';
-                    document.getElementById('formElementChecked').checked = selectedElement.checked;
-                }
-            } else if (selectedElement.tagName === 'TEXTAREA') {
+        
+        if (!isElementType(selectedElement.tagName, 'FORM') || !isInForm) {
+            formElementPropertiesDiv.style.display = 'none';
+            return;
+        }
+        
+        formElementPropertiesDiv.style.display = 'block';
+        document.getElementById('formElementName').parentElement.style.display = 'block';
+        document.getElementById('formElementName').value = selectedElement.name || '';
+        
+        const typeContainers = ['formElementTypeContainer', 'formElementPlaceholderContainer', 
+                                'formElementValueContainer', 'formElementCheckedContainer', 'formElementForContainer'];
+        typeContainers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        
+        if (selectedElement.tagName === 'INPUT') {
+            document.getElementById('formElementTypeContainer').style.display = 'block';
+            document.getElementById('formElementType').value = selectedElement.type || 'text';
+            
+            const textTypes = ['text', 'email', 'password', 'number'];
+            if (textTypes.includes(selectedElement.type)) {
                 document.getElementById('formElementPlaceholderContainer').style.display = 'block';
                 document.getElementById('formElementPlaceholder').value = selectedElement.placeholder || '';
-            } else if (selectedElement.tagName === 'LABEL') {
-                document.getElementById('formElementForContainer').style.display = 'block';
-                document.getElementById('formElementFor').value = selectedElement.htmlFor || '';
+                document.getElementById('formElementValueContainer').style.display = 'block';
+                document.getElementById('formElementValue').value = selectedElement.value || '';
+            } else if (['checkbox', 'radio'].includes(selectedElement.type)) {
+                document.getElementById('formElementValueContainer').style.display = 'block';
+                document.getElementById('formElementValue').value = selectedElement.value || '';
+                document.getElementById('formElementCheckedContainer').style.display = 'block';
+                document.getElementById('formElementChecked').checked = selectedElement.checked;
             }
+        } else if (selectedElement.tagName === 'TEXTAREA') {
+            document.getElementById('formElementPlaceholderContainer').style.display = 'block';
+            document.getElementById('formElementPlaceholder').value = selectedElement.placeholder || '';
+        } else if (selectedElement.tagName === 'LABEL') {
+            document.getElementById('formElementForContainer').style.display = 'block';
+            document.getElementById('formElementFor').value = selectedElement.htmlFor || '';
+        }
+        
+        if (selectedElement.hasAttribute('contenteditable') || ['BUTTON', 'LABEL', 'OPTION'].includes(selectedElement.tagName)) {
+            textContentContainer.style.display = 'block';
+            document.getElementById('elementTextContent').value = selectedElement.innerHTML;
+        }
+    }
 
-            // Also manage text content for editable form elements
-            if (selectedElement.hasAttribute('contenteditable') || selectedElement.tagName === 'BUTTON' || selectedElement.tagName === 'LABEL' || selectedElement.tagName === 'OPTION') {
-                textContentContainer.style.display = 'block';
-                document.getElementById('elementTextContent').value = selectedElement.innerHTML; // Use innerHTML for rich contenteditable and general text
-            }
+    function populateElementInspector() {
+        if (!selectedElement) {
+            hideAllInspectorControls();
+            return;
         }
 
-        // Ensure general element inspector is hidden if a form element is selected with its specific properties
-        if (formElementPropertiesDiv.style.display === 'block') {
-            elementInspectorDiv.style.display = 'none';
-        } else {
-            elementInspectorDiv.style.display = 'block';
+        // Basic visibility controls
+        const selectParentCardBtn = document.getElementById('selectParentCardBtn');
+        const duplicateElementBtn = document.getElementById('duplicateElementBtn');
+        const navigationContainer = document.getElementById('navigationContainer');
+        const formSettingsPropertiesDiv = document.getElementById('form-settings-properties');
+        const elementInspectorDiv = document.getElementById('element-inspector');
+        const formElementPropertiesDiv = document.getElementById('form-element-properties');
+        
+        const parentCard = selectedElement.closest('.card');
+        selectParentCardBtn.style.display = parentCard ? 'block' : 'none';
+        duplicateElementBtn.style.display = 'block';
+        formSettingsPropertiesDiv.style.display = 'none';
+        
+        // Populate ID and Class (common for all elements)
+        document.getElementById('elementId').value = selectedElement.id;
+        document.getElementById('elementClass').value = selectedElement.className;
+        
+        // Navigation/Linking controls
+        navigationContainer.style.display = isElementType(selectedElement.tagName, 'CLICKABLE') ? 'block' : 'none';
+        if (navigationContainer.style.display === 'block') {
+            updateNavLinkTargets();
+            document.getElementById('elementAnchorId').value = selectedElement.id || '';
         }
+        
+        // Use helper functions to populate specific sections
+        hideFormFieldContainers();
+        populateStylingControls();
+        populateElementSpecificControls();
+        populateFormElementControls();
+        
+        // Show/hide main inspector panels
+        elementInspectorDiv.style.display = formElementPropertiesDiv.style.display === 'block' ? 'none' : 'block';
     }
 
     function updateElementAttribute(attributeName, value) {
@@ -864,8 +2175,10 @@
     }
 
     function updateStyle(prop, val) {
+        pushToUndoStack();
         if(!activeWrapper) return;
-        const target = activeWrapper.querySelector('section, footer');
+        const target = activeWrapper.querySelector('section, footer, nav');
+        if(!target) return;
         if(prop === 'backgroundColor') removeBootstrapClasses(target, 'bg');
         if(prop === 'color') removeBootstrapClasses(target, 'text');
         target.style[prop] = val;
@@ -873,6 +2186,7 @@
     }
 
     function updateHeroBackgroundImage(url) {
+        pushToUndoStack();
         if(!activeWrapper || activeWrapper.dataset.type !== 'hero') return;
         const target = activeWrapper.querySelector('section');
         // Parse existing gradient and replace image URL
@@ -886,6 +2200,7 @@
     }
 
     function updateFormAttribute(attributeName, value) {
+        pushToUndoStack();
         if(!activeWrapper || activeWrapper.dataset.type !== 'form') return;
         const form = activeWrapper.querySelector('form');
         if (form) {
@@ -899,12 +2214,15 @@
     }
 
     function updatePadding(val) {
-        const el = activeWrapper.querySelector('section, footer');
+        pushToUndoStack();
+        const el = activeWrapper.querySelector('section, footer, nav');
+        if(!el) return;
         el.className = el.className.replace(/py-\d/, 'py-' + val);
         saveState();
     }
 
     function addElement(type) {
+        pushToUndoStack();
         if (!activeWrapper) return;
         
         let container;
@@ -989,6 +2307,7 @@
     }
 
     function addPricingCard() {
+        pushToUndoStack();
         if (!activeWrapper || activeWrapper.dataset.type !== 'pricing') return;
         const container = activeWrapper.querySelector('.row');
         if (!container) return;
@@ -1026,6 +2345,7 @@
     }
 
     function addTestimonialCard() {
+        pushToUndoStack();
         if (!activeWrapper || activeWrapper.dataset.type !== 'testimonials') return;
         const container = activeWrapper.querySelector('.row');
         if (!container) return;
@@ -1057,6 +2377,7 @@
     }
 
     function addStatItem() {
+        pushToUndoStack();
         if (!activeWrapper || activeWrapper.dataset.type !== 'stats') return;
         const container = activeWrapper.querySelector('.row');
         if (!container) return;
@@ -1083,7 +2404,82 @@
         selectElement(newElement);
     }
 
+    function addNavItem() {
+        pushToUndoStack();
+        if (!activeWrapper || activeWrapper.dataset.type !== 'navbar') return;
+        const navbar = activeWrapper.querySelector('nav');
+        const navList = navbar.querySelector('.navbar-nav');
+        if (!navList) return;
+
+        const html = `<li class="nav-item"><a class="nav-link" contenteditable href="#">New Item</a></li>`;
+
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const newElement = temp.firstElementChild;
+        navList.appendChild(newElement);
+
+        // Make newly added nav item clickable and its elements selectable
+        const link = newElement.querySelector('a');
+        if (link) {
+            link.onclick = (e) => { e.stopPropagation(); selectElement(link); };
+        }
+        newElement.onclick = (e) => { e.stopPropagation(); selectElement(newElement); };
+
+        saveState();
+        selectElement(link || newElement);
+    }
+
+    function addCarouselSlide() {
+        pushToUndoStack();
+        if (!activeWrapper || activeWrapper.dataset.type !== 'carousel') return;
+        const carouselInner = activeWrapper.querySelector('.carousel-inner');
+        const indicators = activeWrapper.querySelector('.carousel-indicators');
+        if (!carouselInner || !indicators) return;
+
+        // Get the carousel ID
+        const carouselId = activeWrapper.dataset.carouselId || 'carouselExampleIndicators';
+
+        // Get the slide index (number of existing slides)
+        const slideIndex = carouselInner.querySelectorAll('.carousel-item').length;
+
+        // Create new slide HTML
+        const slideHtml = `<div class="carousel-item">
+            <img src="https://picsum.photos/id/40/1200/400" class="d-block w-100" alt="Slide ${slideIndex + 1}" contenteditable>
+            <div class="carousel-caption d-none d-md-block">
+                <h5 contenteditable>Slide ${slideIndex + 1} label</h5>
+                <p contenteditable>Add your slide content here...</p>
+            </div>
+        </div>`;
+
+        // Create new indicator HTML with the dynamic carousel ID
+        const indicatorHtml = `<button type="button" data-bs-target="#${carouselId}" data-bs-slide-to="${slideIndex}"></button>`;
+
+        // Add slide to carousel inner
+        const temp = document.createElement('div');
+        temp.innerHTML = slideHtml;
+        const newSlide = temp.firstElementChild;
+        carouselInner.appendChild(newSlide);
+
+        // Add indicator
+        const indicatorTemp = document.createElement('div');
+        indicatorTemp.innerHTML = indicatorHtml;
+        const newIndicator = indicatorTemp.firstElementChild;
+        indicators.appendChild(newIndicator);
+
+        // Make newly added slide clickable and its elements selectable
+        newSlide.querySelectorAll('*').forEach(el => {
+            if (el.tagName !== 'DIV') {
+                el.onclick = (e) => { e.stopPropagation(); selectElement(el); };
+            }
+        });
+        newSlide.onclick = (e) => { e.stopPropagation(); selectElement(newSlide); };
+
+        saveState();
+        selectElement(newSlide);
+    }
+
     function deleteActiveSection() {
+        pushToUndoStack();
         if (activeWrapper) {
             activeWrapper.remove();
             closeInspector();
@@ -1092,6 +2488,7 @@
     }
 
     function moveSection(direction) {
+        pushToUndoStack();
         if (!activeWrapper) return;
         const wrapper = activeWrapper;
         if (direction === 'up' && wrapper.previousElementSibling) {
@@ -1103,8 +2500,32 @@
     }
 
     function duplicateSection() {
+        pushToUndoStack();
         if (!activeWrapper) return;
         const clone = activeWrapper.cloneNode(true);
+        
+        // If duplicating a carousel, generate a new unique carousel ID
+        if (clone.dataset.type === 'carousel') {
+            carouselCounter++;
+            const newCarouselId = 'carousel-' + carouselCounter;
+            clone.dataset.carouselId = newCarouselId;
+            
+            // Replace old carousel ID with new ID in all carousel controls
+            const oldCarouselId = activeWrapper.dataset.carouselId;
+            const carouselElement = clone.querySelector('[id^="carousel-"]');
+            if (carouselElement) {
+                carouselElement.id = newCarouselId;
+            }
+            
+            // Update all data-bs-target attributes in the cloned carousel
+            clone.querySelectorAll('[data-bs-target]').forEach(el => {
+                const target = el.getAttribute('data-bs-target');
+                if (target && oldCarouselId) {
+                    el.setAttribute('data-bs-target', '#' + newCarouselId);
+                }
+            });
+        }
+        
         activeWrapper.parentNode.insertBefore(clone, activeWrapper.nextSibling);
         attachClickHandlers(clone);
         saveState();
@@ -1112,6 +2533,7 @@
     }
 
     function deleteSelectedElement() {
+        pushToUndoStack();
         if (selectedElement && activeWrapper && activeWrapper.contains(selectedElement)) {
             const parent = selectedElement.parentElement;
             selectedElement.remove();
@@ -1127,6 +2549,7 @@
     }
 
     function duplicateSelectedElement() {
+        pushToUndoStack();
         if (!selectedElement || !activeWrapper || !activeWrapper.contains(selectedElement)) return;
         
         // Clone the selected element
@@ -1164,6 +2587,7 @@
     }
 
     function addFormElement(type) {
+        pushToUndoStack();
         if (!activeWrapper || activeWrapper.dataset.type !== 'form') return;
 
         // Find the innermost container within the form section
@@ -1277,11 +2701,58 @@
         }
     }
 
+    function clearCurrentPage() {
+        pushToUndoStack();
+        if (confirm('Clear all content on this page?')) {
+            canvas.innerHTML = '';
+            if (currentPageId && pages[currentPageId]) {
+                pages[currentPageId].content = '';
+            }
+            closeInspector();
+            saveState();
+        }
+    }
+
+    function clearAllData() {
+        const confirmMessage = `⚠️ WARNING: This will permanently delete ALL saved projects and data!\n\nAre you sure? This cannot be undone.\n\nType 'YES' to confirm:`;
+        const userInput = prompt(confirmMessage);
+        
+        if (userInput === 'YES') {
+            // Clear localStorage
+            localStorage.removeItem('pageBuilderProjects');
+            localStorage.removeItem('currentProjectId');
+            
+            // Reset all variables
+            projects = {};
+            pages = {};
+            localFiles = {};
+            currentProjectId = null;
+            currentPageId = null;
+            projectCounter = 0;
+            pageCounter = 0;
+            
+            // Clear canvas
+            canvas.innerHTML = '';
+            
+            // Close inspector
+            closeInspector();
+            
+            // Refresh UI
+            refreshProjectSelector();
+            refreshPagesList();
+            
+            alert('✓ All data has been cleared. Creating default project...');
+            
+            // Create a new default project
+            loadLocalState();
+        } else if (userInput !== null) {
+            alert('Cancelled. Data was not cleared.');
+        }
+    }
+
     function clearAll() {
-        canvas.innerHTML = '';
-        closeInspector();
-        localStorage.removeItem('simplifiedBuilderState');
-        saveState(); // Save an empty state
+        // Deprecated: use clearCurrentPage() or clearAllData() instead
+        clearCurrentPage();
     }
 
     function rgbToHex(rgb) {
@@ -1290,30 +2761,676 @@
         return "#" + vals.slice(0,3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
     }
 
-    function exportPage() {
-        const clone = canvas.cloneNode(true);
-        let content = "";
-        clone.querySelectorAll('.section-wrapper').forEach(w => {
-            // Remove any editor-specific highlights or classes
-            w.classList.remove('active');
-            w.querySelectorAll('.selected-element-highlight').forEach(el => el.classList.remove('selected-element-highlight'));
+    function showExportModal() {
+        // Export current project as HTML files + manifest entry for showcase gallery
+        // Populates default values from current project
+        const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+        
+        // Populate project metadata with defaults from current project
+        const currentProject = projects[currentProjectId];
+        document.getElementById('exportProjectName').value = currentProject ? currentProject.name : 'My Project';
+        document.getElementById('exportProjectDescription').value = currentProject ? currentProject.description : '';
+        document.getElementById('exportProjectIcon').value = '🎨';
+        document.getElementById('exportFolderPath').value = currentProject ? currentProject.name.toLowerCase().replace(/\s+/g, '') : 'my-project';
+        document.getElementById('exportPassword').value = ''; // Clear password field
+        
+        // Populate page checkboxes
+        const selectedPagesContainer = document.getElementById('selectedPagesContainer');
+        selectedPagesContainer.innerHTML = '';
+        Object.keys(pages).forEach(pageId => {
+            const page = pages[pageId];
+            const checkbox = document.createElement('div');
+            checkbox.className = 'form-check';
+            checkbox.innerHTML = `
+                <input class="form-check-input" type="checkbox" id="page-${pageId}" value="${pageId}" checked>
+                <label class="form-check-label" for="page-${pageId}">
+                    ${page.name}
+                </label>
+            `;
+            selectedPagesContainer.appendChild(checkbox);
+        });
+        
+        // Toggle selected pages container visibility
+        document.querySelectorAll('input[name="exportOption"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                selectedPagesContainer.style.display = this.value === 'selected' ? 'block' : 'none';
+            });
+        });
+        
+        exportModal.show();
+    }
+    
+    function closeExportModal() {
+        const exportModal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+        if (exportModal) exportModal.hide();
+    }
+    
+    function generateManifestEntry() {
+        // Generate a manifest entry from the current export form values
+        const projectName = document.getElementById('exportProjectName').value.trim();
+        const description = document.getElementById('exportProjectDescription').value.trim();
+        const icon = document.getElementById('exportProjectIcon').value.trim();
+        const folderPath = document.getElementById('exportFolderPath').value.trim();
+        
+        if (!projectName || !folderPath) {
+            alert('Project name and folder path are required.');
+            return null;
+        }
+        
+        const manifestEntry = {
+            name: projectName,
+            description: description,
+            folderPath: folderPath,
+            pagePath: 'index.html', // Default main page
+            icon: icon || '🎨',
+            createdDate: new Date().toISOString()
+        };
+        
+        return manifestEntry;
+    }
+    
+    // ===== COPYRIGHT/WATERMARK FUNCTIONS =====
+    const EXPORT_PASSWORD = 'E@ss1234';
+    
+    // Copyright footer (removable)
+    const COPYRIGHT_FOOTER = '<footer style="background-color: #2c3e50; padding: 30px; text-align: center; border-top: 3px solid #667eea; margin-top: 40px; color: white;"><p style="margin: 0; font-size: 14px;">Built with <strong>MTE Website Builder</strong> | <a href="https://wa.me/+256777233322" style="color: #667eea; text-decoration: none; font-weight: bold;">MTE Support</a></p><p style="margin: 8px 0 0 0; font-size: 12px; color: #bbb;">Create beautiful websites with ease</p></footer>';
+    
+    // Contact widget styles (added to head)
+    const CONTACT_WIDGET_STYLES = `<style>
+#owner-contact-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50px;
+    padding: 0;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    animation: slideInUp 0.5s ease;
+}
 
-            const section = w.querySelector('section, footer');
-            if(section) {
-                // Remove contenteditable attributes
-                section.removeAttribute('contenteditable');
-                section.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
-                content += section.outerHTML;
+#owner-contact-widget a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 20px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+#owner-contact-widget a:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+}
+
+@media (max-width: 768px) {
+    #owner-contact-widget {
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    #owner-contact-widget a {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>`;
+    
+    // Contact widget HTML (added to body)
+    const CONTACT_WIDGET_HTML = `<div id="owner-contact-widget"><a href="https://wa.me/+256777233322?text=I%20need%20help%20with%20my%20MTE%20website" target="_blank" rel="noopener noreferrer">💬 MTE Support</a></div>`;
+    
+    function verifyExportPassword(password) {
+        return password.trim() === EXPORT_PASSWORD;
+    }
+    
+    function addContactWidget(htmlContent) {
+        // Add contact widget styles to head and widget to body
+        // Add styles before closing head tag
+        htmlContent = htmlContent.replace('</head>', CONTACT_WIDGET_STYLES + '</head>');
+        // Add widget before closing body tag
+        htmlContent = htmlContent.replace('</body>', CONTACT_WIDGET_HTML + '</body>');
+        return htmlContent;
+    }
+    
+    function addCopyrightFooter(htmlContent) {
+        // Add copyright footer to the body (before closing body tag)
+        return htmlContent.replace('</body>', COPYRIGHT_FOOTER + '</body>');
+    }
+    
+    function removeCopyrightFromContent(content) {
+        // Remove existing copyright footers from content
+        let cleaned = content;
+        // Remove the copyright footer if it exists
+        cleaned = cleaned.replace(/<footer[^>]*>[\s\S]*?⚠️ Watermark.*?<\/footer>/gi, '');
+        // Remove contact widget styles
+        cleaned = cleaned.replace(/<style>[\s\S]*?#owner-contact-widget[\s\S]*?<\/style>/gi, '');
+        // Remove contact widget HTML
+        cleaned = cleaned.replace(/<div[^>]*id="owner-contact-widget"[\s\S]*?<\/div>/gi, '');
+        // Also remove any text nodes with contact info
+        cleaned = cleaned.replace(/contact\s+0777233322/gi, '');
+        cleaned = cleaned.replace(/Get\s+Website\s+Help/gi, '');
+        return cleaned;
+    }
+    
+    function processContentWithCopyright(content, hasPassword) {
+        // Remove any existing copyright/widget first
+        let processed = removeCopyrightFromContent(content);
+        // Add copyright protection if no password provided
+        if (!hasPassword) {
+            processed = addCopyrightFooter(processed);
+            processed = addContactWidget(processed);
+        }
+        return processed;
+    }
+    
+    function exportPages() {
+        const exportOption = document.querySelector('input[name="exportOption"]:checked').value;
+        const exportPassword = document.getElementById('exportPassword').value;
+        const hasValidPassword = exportPassword && verifyExportPassword(exportPassword);
+        const pagesToExport = {};
+        
+        if (exportOption === 'current') {
+            pagesToExport[currentPageId] = pages[currentPageId];
+        } else if (exportOption === 'selected') {
+            document.querySelectorAll('#selectedPagesContainer input[type="checkbox"]:checked').forEach(checkbox => {
+                const pageId = checkbox.value;
+                pagesToExport[pageId] = pages[pageId];
+            });
+        } else if (exportOption === 'all') {
+            Object.keys(pages).forEach(pageId => {
+                pagesToExport[pageId] = pages[pageId];
+            });
+        }
+        
+        if (Object.keys(pagesToExport).length === 0) {
+            alert('Please select at least one page to export.');
+            return;
+        }
+        
+        // Generate manifest entry
+        const manifestEntry = generateManifestEntry();
+        if (!manifestEntry) return;
+        
+        if (Object.keys(pagesToExport).length === 1) {
+            // Export single page with manifest entry
+            const pageId = Object.keys(pagesToExport)[0];
+            const page = pagesToExport[pageId];
+            exportSinglePageWithManifest(page.name, page.content, manifestEntry, hasValidPassword);
+        } else {
+            // Export multiple pages as ZIP with manifest entry
+            exportMultiplePagesAsZipWithManifest(pagesToExport, manifestEntry, hasValidPassword);
+        }
+        
+        closeExportModal();
+    }
+    // ===== END COPYRIGHT/WATERMARK FUNCTIONS =====
+    
+    // --- File Export Helpers ---
+    function extractLocalFilesFromContent(content) {
+        const usedFiles = {};
+        const clone = document.createElement('div');
+        clone.innerHTML = content;
+        
+        // Find all image sources and background images that reference local files
+        clone.querySelectorAll('img').forEach(img => {
+            if (img.src && localFiles[img.src]) {
+                usedFiles[img.src] = localFiles[img.src];
             }
         });
-        const blob = new Blob([`<!DOCTYPE html><html><head><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>${content}</body></html>`], {type: 'text/html'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'index.html';
-        a.click();
+        
+        clone.querySelectorAll('[style*="background"]').forEach(el => {
+            const bgImage = el.style.backgroundImage;
+            if (bgImage) {
+                const urlMatch = bgImage.match(/url\('([^']+)'\)/);
+                if (urlMatch && localFiles[urlMatch[1]]) {
+                    usedFiles[urlMatch[1]] = localFiles[urlMatch[1]];
+                }
+            }
+        });
+        
+        return usedFiles;
     }
-</script>
+    
+    function replaceLocalFilesInHtml(htmlContent, usedFiles) {
+        let result = htmlContent;
+        Object.keys(usedFiles).forEach(fileHash => {
+            const fileInfo = usedFiles[fileHash];
+            const filename = sanitizeFilename(fileInfo.originalName);
+            const assetPath = `assets/${filename}`;
+            
+            // Replace image src attributes
+            result = result.replace(new RegExp(`src=["']${escapeRegex(fileHash)}["']`, 'g'), `src="${assetPath}"`);
+            
+            // Replace background images
+            result = result.replace(new RegExp(`url\\(['"]${escapeRegex(fileHash)}['"]\\)`, 'g'), `url('${assetPath}')`);
+        });
+        return result;
+    }
+    
+    function sanitizeFilename(filename) {
+        return filename.replace(/[^a-z0-9._-]/gi, '_').toLowerCase();
+    }
+    
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    // --- End File Export Helpers ---
+    
 
+
+    
+    function generateCleanHtml(pageName, content, usedFiles = {}, hasValidPassword = false) {
+        const clone = document.createElement('div');
+        clone.innerHTML = content;
+        let htmlContent = '';
+        clone.querySelectorAll('.section-wrapper').forEach(w => {
+            w.classList.remove('active');
+            w.querySelectorAll('.selected-element-highlight').forEach(el => el.classList.remove('selected-element-highlight'));
+            const section = w.querySelector('section, footer, nav');
+            if(section) {
+                section.removeAttribute('contenteditable');
+                section.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+                htmlContent += section.outerHTML;
+            }
+        });
+        
+        // Replace local file references with asset paths
+        htmlContent = replaceLocalFilesInHtml(htmlContent, usedFiles);
+        
+        let fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${pageName}</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>${htmlContent}<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"><\/script></body></html>`;
+        
+        // Apply copyright protection if no valid password (on complete HTML with </body> tag)
+        fullHtml = processContentWithCopyright(fullHtml, hasValidPassword);
+        
+        return fullHtml;
+    }
+
+    
+
+    
+    // --- New Manifest-Aware Export Functions ---
+    function exportSinglePageWithManifest(pageName, content, manifestEntry, hasValidPassword = false) {
+        // Export single page along with manifest.json entry
+        const usedFiles = extractLocalFilesFromContent(content);
+        const clone = document.createElement('div');
+        clone.innerHTML = content;
+        let htmlContent = '';
+        
+        clone.querySelectorAll('.section-wrapper').forEach(w => {
+            w.classList.remove('active');
+            w.querySelectorAll('.selected-element-highlight').forEach(el => el.classList.remove('selected-element-highlight'));
+            const section = w.querySelector('section, footer, nav');
+            if(section) {
+                section.removeAttribute('contenteditable');
+                section.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+                htmlContent += section.outerHTML;
+            }
+        });
+        
+        htmlContent = replaceLocalFilesInHtml(htmlContent, usedFiles);
+        
+        let mainPageHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${pageName}</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>${htmlContent}<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"><\/script></body></html>`;
+        // Apply copyright protection if no valid password (on complete HTML with </body> tag)
+        mainPageHtml = processContentWithCopyright(mainPageHtml, hasValidPassword);
+        
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP library not loaded. Please add page content to your folder manually, then update projects-manifest.json with this entry:\n\n' + JSON.stringify(manifestEntry, null, 2));
+            return;
+        }
+        
+        const zip = new JSZip();
+        
+        // Add main page as index.html
+        zip.file('index.html', mainPageHtml);
+        
+        // Add manifest entry as manifest-entry.json
+        zip.file('manifest-entry.json', JSON.stringify([manifestEntry], null, 2));
+        
+        // Add asset files
+        Object.keys(usedFiles).forEach(fileHash => {
+            const fileInfo = usedFiles[fileHash];
+            const filename = sanitizeFilename(fileInfo.originalName);
+            const base64Data = fileInfo.dataUrl.split(',')[1];
+            zip.file(`assets/${filename}`, base64Data, {base64: true});
+        });
+        
+        zip.generateAsync({type: 'blob'}).then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = manifestEntry.folderPath + '.zip';
+            a.click();
+            
+            // Show helpful message
+            alert(`✓ Project exported successfully!\n\nTo use with Showcase Gallery:\n1. Extract the ZIP file to create /${manifestEntry.folderPath}/ folder\n2. Add the manifest-entry.json content to your projects-manifest.json\n3. Regenerate manifest using: node generate-manifest.js or python generate-manifest.py`);
+        }).catch(err => {
+            alert('Error creating ZIP file: ' + err.message);
+        });
+    }
+    
+    function exportMultiplePagesAsZipWithManifest(pagesToExport, manifestEntry, hasValidPassword = false) {
+        // Export multiple pages with manifest entry
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP library not loaded. Please export pages manually and update projects-manifest.json with:\n\n' + JSON.stringify(manifestEntry, null, 2));
+            return;
+        }
+        
+        const zip = new JSZip();
+        const allUsedFiles = {};
+        
+        // Create individual HTML files for each page
+        Object.keys(pagesToExport).forEach((pageId, index) => {
+            const page = pagesToExport[pageId];
+            const usedFiles = extractLocalFilesFromContent(page.content);
+            Object.assign(allUsedFiles, usedFiles);
+            
+            const htmlContent = generateCleanHtml(page.name, page.content, usedFiles, hasValidPassword);
+            
+            // First page becomes index.html, others get their own files
+            if (index === 0) {
+                zip.file('index.html', htmlContent);
+            } else {
+                const fileName = page.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '.html';
+                zip.file(fileName, htmlContent);
+            }
+        });
+        
+        // Add manifest entry
+        zip.file('manifest-entry.json', JSON.stringify([manifestEntry], null, 2));
+        
+        // Add all local asset files
+        Object.keys(allUsedFiles).forEach(fileHash => {
+            const fileInfo = allUsedFiles[fileHash];
+            const filename = sanitizeFilename(fileInfo.originalName);
+            const base64Data = fileInfo.dataUrl.split(',')[1];
+            zip.file(`assets/${filename}`, base64Data, {base64: true});
+        });
+        
+        // Generate and download the ZIP file
+        zip.generateAsync({type: 'blob'}).then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = manifestEntry.folderPath + '.zip';
+            a.click();
+            
+            // Show helpful message
+            alert(`✓ Project exported successfully!\n\nTo use with Showcase Gallery:\n1. Extract the ZIP file to create /${manifestEntry.folderPath}/ folder\n2. Add the manifest-entry.json content to your projects-manifest.json\n3. Regenerate manifest using: node generate-manifest.js or python generate-manifest.py`);
+        }).catch(err => {
+            alert('Error creating ZIP file: ' + err.message);
+        });
+    }
+    // --- End Manifest-Aware Export Functions ---
+    
+    function openShowcase() {
+        // Open the standalone Showcase Gallery page
+        // This displays projects from projects-manifest.json (directory-based)
+        // It is completely independent from builder project management
+        window.location.href = 'showcase projects page.html';
+    }
+    
+    // --- Import/Re-edit Functionality ---
+    
+    function importSite() {
+        document.getElementById('siteImportInput').click();
+    }
+    
+    async function handleFileImport(file) {
+        if (!file) return;
+        
+        try {
+            if (file.name.endsWith('.zip')) {
+                await importZipFile(file);
+            } else if (file.name.endsWith('.html')) {
+                const text = await file.text();
+                parseAndLoadHTML(text);
+            } else {
+                alert('Please select a valid HTML or ZIP file');
+            }
+        } catch (error) {
+            alert('Error importing file: ' + error.message);
+        }
+        
+        // Reset input
+        document.getElementById('siteImportInput').value = '';
+    }
+    
+    async function importZipFile(file) {
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP library not loaded. Please use HTML export instead.');
+            return;
+        }
+        
+        const zip = new JSZip();
+        const content = await zip.loadAsync(file);
+        
+        // Find HTML file(s)
+        let htmlFiles = [];
+        for (let filename in content.files) {
+            if (filename.endsWith('.html') && !filename.includes('__MACOSX')) {
+                htmlFiles.push(filename);
+            }
+        }
+        
+        if (htmlFiles.length === 0) {
+            alert('No HTML files found in ZIP');
+            return;
+        }
+        
+        // Extract assets and load them into localFiles
+        for (let filename in content.files) {
+            if (filename.startsWith('assets/') && !content.files[filename].dir) {
+                const assetFile = content.files[filename];
+                const data = await assetFile.async('arraybuffer');
+                
+                // Convert to base64
+                const bytes = new Uint8Array(data);
+                const binary = String.fromCharCode.apply(null, bytes);
+                const base64 = btoa(binary);
+                
+                // Determine MIME type
+                const ext = filename.split('.').pop().toLowerCase();
+                const mimeType = getMimeType(ext);
+                const dataUrl = `data:${mimeType};base64,${base64}`;
+                
+                // Create file hash and store
+                const originalName = filename.split('/').pop();
+                const fileHash = generateFileHash(originalName, bytes.length);
+                localFiles[fileHash] = {
+                    filename: originalName,
+                    dataUrl: dataUrl,
+                    type: mimeType,
+                    originalName: originalName
+                };
+            }
+        }
+        
+        // Load each HTML file as a separate page
+        if (htmlFiles.length === 1) {
+            const htmlFile = content.files[htmlFiles[0]];
+            const htmlContent = await htmlFile.async('string');
+            parseAndLoadHTML(htmlContent);
+        } else {
+            // Multiple pages - ask user
+            const useNewPages = confirm('Import each HTML file as a separate page? (Cancel to merge all into current page)');
+            
+            for (let filename of htmlFiles) {
+                if (useNewPages && filename !== htmlFiles[0]) {
+                    createNewPage();
+                }
+                const htmlFile = content.files[filename];
+                const htmlContent = await htmlFile.async('string');
+                parseAndLoadHTML(htmlContent, !useNewPages);
+            }
+        }
+    }
+    
+    function getMimeType(ext) {
+        const mimeTypes = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'webp': 'image/webp',
+            'svg': 'image/svg+xml',
+            'bmp': 'image/bmp'
+        };
+        return mimeTypes[ext] || 'image/jpeg';
+    }
+    
+    function parseAndLoadHTML(htmlContent, appendMode = false) {
+        // CRITICAL INTEGRATION POINT: Import workflow
+        // This function:
+        // 1. Parses HTML from imported files
+        // 2. Detects section types using detectSectionType()
+        // 3. Creates section-wrappers with correct data-type attributes
+        // 4. Attaches event handlers for full editing capability
+        // 5. Initializes carousel IDs for proper functioning
+        // 6. Saves to localStorage via saveState()
+        //
+        // All imported sections are treated identically to new sections
+        // and support full editing, copy/paste, export workflows
+        
+        // Create a temporary DOM to parse HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        
+        // Extract all sections and footers from body
+        const sections = doc.querySelectorAll('body > section, body > footer');
+        
+        if (sections.length === 0) {
+            alert('No sections found in HTML file');
+            return;
+        }
+        
+        // Ask about page handling if not in append mode
+        if (!appendMode) {
+            const createNewPageMode = confirm('Create new page for imported content? (Cancel to add to current page)');
+            if (createNewPageMode) {
+                createNewPage();
+            } else if (!appendMode) {
+                // Clear current page only if not appending
+                if (!confirm('Clear current page content?')) {
+                    return;
+                }
+                canvas.innerHTML = '';
+            }
+        }
+        
+        // Import each section
+        sections.forEach(section => {
+            const sectionType = detectSectionType(section);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'section-wrapper';
+            wrapper.dataset.type = sectionType;
+            
+            // Replace asset paths with file hashes
+            let sectionHtml = section.outerHTML;
+            
+            // Replace all asset paths
+            Object.keys(localFiles).forEach(fileHash => {
+                const filename = sanitizeFilename(localFiles[fileHash].originalName);
+                const assetPath = `assets/${filename}`;
+                // Create regex to find asset paths
+                const regex = new RegExp(escapeRegex(assetPath), 'g');
+                sectionHtml = sectionHtml.replace(regex, fileHash);
+            });
+            
+            wrapper.innerHTML = sectionHtml;
+            canvas.appendChild(wrapper);
+            attachClickHandlers(wrapper);
+        });
+        
+        // Initialize carousel IDs for imported carousels
+        initializeCarouselIds();
+        
+        saveState();
+        closeInspector();
+        alert('Site/page imported successfully!');
+    }
+    
+    function detectSectionType(section) {
+        // CRITICAL: This determines the data-type attribute for imported sections
+        // Used by: parseAndLoadHTML() during import
+        // The data-type determines:
+        // 1. Which inspector controls are shown
+        // 2. How the section is exported
+        // 3. What builder options are available
+        // 4. How the section renders in the canvas
+        //
+        // Must be kept synchronized with the templates object
+        // If you add a new template type, add detection logic here
+        
+        const html = section.outerHTML.toLowerCase();
+        const textContent = section.textContent.toLowerCase();
+        
+        // Check for specific patterns
+        if (html.includes('class="card"') && html.includes('col-md-4')) {
+            return 'cards';
+        }
+        
+        if (html.includes('carousel') || html.includes('carousel-inner')) {
+            return 'carousel';
+        }
+        
+        if (html.includes('gallery-row') || html.includes('gallery-item')) {
+            return 'gallery';
+        }
+        
+        if (html.includes('testimonial') || (html.includes('blockquote-footer') && html.includes('card'))) {
+            return 'testimonials';
+        }
+        
+        if (html.includes('stat-item') || html.includes('display-6')) {
+            return 'stats';
+        }
+        
+        if (html.includes('pricing') || textContent.includes('per month')) {
+            return 'pricing';
+        }
+        
+        if (html.includes('dashboard') || html.includes('container-fluid')) {
+            return 'dashboard';
+        }
+        
+        if (html.includes('hero') || html.includes('display-4') || html.includes('background-image')) {
+            return 'hero';
+        }
+        
+        if (html.includes('form-wrapper') || html.includes('<form')) {
+            return 'form';
+        }
+        
+        if (section.tagName === 'FOOTER' || (html.includes('bg-dark') && textContent.includes('rights reserved'))) {
+            return 'footer';
+        }
+        
+        if (html.includes('call to action') || textContent.includes('ready to')) {
+            return 'cta';
+        }
+        
+        // Default to generic
+        return 'generic';
+    }
+    
+    // --- End Import/Re-edit Functionality ---</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
