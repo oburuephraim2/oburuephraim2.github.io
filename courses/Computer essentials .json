@@ -1,0 +1,135 @@
+{
+  "courseMetadata": {
+    "title": "Computer Essentials: Comprehensive Workforce Readiness",
+    "version": "v3.0.26",
+    "passingScore": 85
+  },
+  "studyMaterial": [
+    {
+      "topic": "The Hardware Ecosystem",
+      "content": "Computers rely on the CPU (Brain), RAM (Active memory), and Storage (SSD/HDD). Peripherals are external: Input devices (Keyboard, Mouse, Mic) send data in; Output devices (Monitor, Printer, Speakers) send data out. A Motherboard connects them all."
+    },
+    {
+      "topic": "Software & Operating Systems",
+      "content": "System Software (Windows, macOS) manages the hardware. Application Software (Word, Chrome, Zoom) helps you perform tasks. Keep your Operating System (OS) updated to ensure security patches are applied."
+    },
+    {
+      "topic": "Networking & The Cloud",
+      "content": "Internet access happens via Wi-Fi (Wireless) or Ethernet (Wired/Faster). Cloud Computing (OneDrive, Google Drive, Dropbox) allows you to store files on remote servers so you can access them from any device. An IP address is your computer's digital home address."
+    },
+    {
+      "topic": "File Management & Productivity",
+      "content": "Files have extensions: .pdf (Document), .docx (Word), .xlsx (Excel), and .zip (Compressed/Combined files). Use Folders to stay organized. 'Cloud Syncing' means changes made on your PC are automatically updated on your phone or web browser."
+    },
+    {
+      "topic": "Cybersecurity & Phishing",
+      "content": "Multi-Factor Authentication (MFA) adds a second layer of security (like a code on your phone). Phishing scams use urgent language or fake 'From' addresses to steal passwords. Never click links in emails from unverified senders."
+    },
+    {
+      "topic": "Digital Professionalism (Email)",
+      "content": "CC (Carbon Copy) is for people who need to see the email but don't need to act. BCC (Blind Carbon Copy) hides the recipient's email from others—use this when emailing large groups to protect privacy."
+    }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "type": "multiple",
+      "text": "Identify all 'Internal Hardware' located inside the computer case:",
+      "options": [
+        "CPU (Central Processing Unit)",
+        "Motherboard",
+        "RAM",
+        "Laser Printer",
+        "Graphics Card (GPU)"
+      ],
+      "correct": [0, 1, 2, 4],
+      "points": 4,
+      "feedback": "Internal hardware includes the CPU, RAM, Motherboard, and GPU. Printers are external peripherals."
+    },
+    {
+      "id": 2,
+      "type": "single",
+      "text": "You are sending a newsletter to 50 clients and want to protect their privacy so they cannot see each other's email addresses. Which field should you use?",
+      "options": ["TO", "CC", "BCC", "Subject"],
+      "correct": [2],
+      "points": 1,
+      "feedback": "BCC (Blind Carbon Copy) hides recipient names and addresses from everyone else on the thread."
+    },
+    {
+      "id": 3,
+      "type": "multiple",
+      "text": "Select the benefits of using Cloud Storage (like Google Drive or OneDrive):",
+      "options": [
+        "Files can be accessed from any device with internet.",
+        "It makes your computer run 5x faster.",
+        "Allows for easy collaboration on the same document.",
+        "Acts as a backup if your physical computer is stolen or broken.",
+        "Prevents all viruses from ever entering your computer."
+      ],
+      "correct": [0, 2, 3],
+      "points": 3,
+      "feedback": "Cloud storage provides accessibility, collaboration, and backup, but it doesn't speed up your local processor or act as a total antivirus."
+    },
+    {
+      "id": 4,
+      "type": "multiple",
+      "text": "Which of these are common file extensions for documents and data?",
+      "options": [".pdf", ".xlsx", ".exe", ".docx", ".zip"],
+      "correct": [0, 1, 3],
+      "points": 3,
+      "feedback": ".pdf, .xlsx (Excel), and .docx (Word) are document types. .exe is an installer/program and .zip is a compressed folder."
+    },
+    {
+      "id": 5,
+      "type": "single",
+      "text": "Your internet is slow during a video call. Which connection type is generally the most stable and fastest?",
+      "options": ["Public Wi-Fi", "Mobile Hotspot", "Wired Ethernet Cable", "Bluetooth Tethering"],
+      "correct": [2],
+      "points": 1,
+      "feedback": "A wired Ethernet connection is less prone to interference and offers more consistent speeds than wireless."
+    },
+    {
+      "id": 6,
+      "type": "multiple",
+      "text": "Identify signs of a Phishing email:",
+      "options": [
+        "The 'From' email address is 'support@microsoft-security-alert.net' instead of '@microsoft.com'.",
+        "The email asks you to 'Click here immediately to prevent account deletion'.",
+        "The email greeting is generic, like 'Dear Valued Member'.",
+        "The email contains your actual employee ID number.",
+        "The email has several spelling and grammar mistakes."
+      ],
+      "correct": [0, 1, 2, 4],
+      "points": 4,
+      "feedback": "Phishing often uses fake domains, urgency, generic greetings, and poor grammar to trick users."
+    },
+    {
+      "id": 7,
+      "type": "single",
+      "text": "What is the primary function of an Operating System (OS)?",
+      "options": [
+        "To allow you to browse the internet.",
+        "To act as the interface between the user, applications, and hardware.",
+        "To protect the computer from physical dust.",
+        "To store all your photos and videos."
+      ],
+      "correct": [1],
+      "points": 1,
+      "feedback": "The OS (Windows/macOS) is the foundation that manages hardware and allows apps to run."
+    },
+    {
+      "id": 8,
+      "type": "single",
+      "text": "If your computer screen freezes and you cannot move the mouse, what is the 'hard reset' procedure?",
+      "options": [
+        "Press 'Ctrl+C' repeatedly.",
+        "Wait 24 hours for it to unfreeze.",
+        "Hold down the physical power button until the machine turns off.",
+        "Click the 'Restart' button in the Start Menu."
+      ],
+      "correct": [2],
+      "points": 1,
+      "feedback": "When the software is totally unresponsive, a hard reset via the physical power button is the last resort."
+    }
+  ]
+}
