@@ -526,22 +526,123 @@ function takeSkippedQuiz(topicIdx) {
 }
 
 function generateCert(score) {
-    const name = prompt("Enter full name:");
-    if (!name) return;
+    const name = prompt("Enter your full name (as it should appear on the certificate):");
+    if (!name || name.trim() === "") {
+        alert("Please enter your full name to generate the certificate.");
+        return;
+    }
+
+    // Certificate metadata
+    const certNumber = "MTE-" + Math.floor(100000 + Math.random() * 900000);
+    const today = new Date();
+    const issueDate = today.toLocaleDateString('en-GB'); // DD/MM/YYYY
+
     const canvas = document.createElement('canvas');
-    canvas.width = 1600; canvas.height = 1131;
+    canvas.width = 2000;          // Higher resolution for quality printing
+    canvas.height = 1414;         // ≈ A4 landscape ratio (better proportions)
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = "white"; ctx.fillRect(0,0,1600,1131);
-    ctx.strokeStyle = "#1976d2"; ctx.lineWidth = 40; ctx.strokeRect(20,20,1560,1091);
-    ctx.textAlign = "center"; ctx.fillStyle = "#333";
-    ctx.font = "bold 80px Arial"; ctx.fillText("CERTIFICATE OF COMPLETION", 800, 300);
-    ctx.font = "90px Arial"; ctx.fillText(name.toUpperCase(), 800, 550);
-    ctx.font = "40px Arial"; ctx.fillText(`Score: ${score.toFixed(1)}%`, 800, 750);
-    ctx.font = "30px Arial"; ctx.fillText(courseData.courseMetadata.title, 800, 900);
+
+    // Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 2000, 1414);
+
+    // Subtle gradient overlay for premium feel
+    const gradient = ctx.createLinearGradient(0, 0, 0, 1414);
+    gradient.addColorStop(0, 'rgba(240, 248, 255, 0.4)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 1)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 2000, 1414);
+
+    // Main border (dark blue like your original header)
+    ctx.strokeStyle = "#1976d2";
+    ctx.lineWidth = 50;
+    ctx.strokeRect(40, 40, 1920, 1334);
+
+    // Inner gold decorative border
+    ctx.strokeStyle = "#c9a03a";  // elegant gold
+    ctx.lineWidth = 12;
+    ctx.strokeRect(80, 80, 1840, 1254);
+
+    // Header / Main Title (keeping centered bold style)
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#1976d2";    // same blue as your original border
+    ctx.font = "bold 110px 'Times New Roman', serif";
+    ctx.fillText("CERTIFICATE OF COMPLETION", 1000, 280);
+
+    // Subtitle / Program Name
+    ctx.font = "60px 'Arial', sans-serif";
+    ctx.fillStyle = "#444444";
+    ctx.fillText("MTE Computer Essentials", 1000, 380);
+
+    // "This is to certify" line
+    ctx.font = "italic 48px 'Georgia', serif";
+    ctx.fillStyle = "#555555";
+    ctx.fillText("This is to certify that", 1000, 520);
+
+    // Recipient Name (large and prominent)
+    ctx.font = "bold 120px 'Georgia', serif";
+    ctx.fillStyle = "#000000";
+    ctx.fillText(name.toUpperCase(), 1000, 680);
+
+    // Achievement details
+    ctx.font = "50px Arial, sans-serif";
+    ctx.fillStyle = "#333333";
+    ctx.fillText(`has successfully completed the course`, 1000, 820);
+    ctx.fillText(`with a score of ${score.toFixed(1)}%`, 1000, 890);
+
+    ctx.font = "42px Arial, sans-serif";
+    ctx.fillText(courseData.courseMetadata.title || "Computer Essentials: Workforce Readiness", 1000, 960);
+
+    // Certificate & Date info
+    ctx.font = "38px Arial, sans-serif";
+    ctx.fillStyle = "#555555";
+    ctx.fillText(`Certificate Number: ${certNumber}`, 1000, 1080);
+    ctx.fillText(`Issued on ${issueDate} in Kampala, Uganda`, 1000, 1140);
+
+    // Signature lines
+    ctx.font = "italic 45px 'Georgia', serif";
+    ctx.fillStyle = "#333333";
+
+    // Left signature
+    ctx.beginPath();
+    ctx.moveTo(500, 1280);
+    ctx.lineTo(900, 1280);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#000000";
+    ctx.stroke();
+
+    ctx.fillText("Authorized Signatory", 700, 1340);
+
+    // Right signature (MTE representative)
+    ctx.beginPath();
+    ctx.moveTo(1100, 1280);
+    ctx.lineTo(1500, 1280);
+    ctx.stroke();
+
+    ctx.fillText("MTE Training Director", 1300, 1340);
+
+    // Optional small seal (simple circle)
+    ctx.beginPath();
+    ctx.arc(300, 1100, 140, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(201, 160, 58, 0.15)"; // light gold
+    ctx.fill();
+    ctx.strokeStyle = "#c9a03a";
+    ctx.lineWidth = 8;
+    ctx.stroke();
+    ctx.font = "bold 70px Arial";
+    ctx.fillStyle = "#1976d2";
+    ctx.fillText("MTE", 300, 1120);
+    ctx.font = "38px Arial";
+    ctx.fillText("Certified", 300, 1180);
+
+    // Download
     const link = document.createElement('a');
-    link.download = `Cert_${name}_${Date.now()}.png`; 
-    link.href = canvas.toDataURL(); 
+    link.download = `MTE_Certificate_${name.replace(/\s+/g, '_')}_${certNumber}.png`;
+    link.href = canvas.toDataURL('image/png');
     link.click();
+
+    // Optional feedback to user
+    alert(`Certificate generated!\n\nName: ${name}\nScore: ${score}%\nFile: ${link.download}`);
 }
 
 function enterAdminMode() {
