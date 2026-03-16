@@ -46,7 +46,7 @@ A complete web design and portfolio system with a powerful visual builder, proje
 
 | File | Purpose |
 |------|---------|
-| **index_beta.html** | Visual page builder (main app) |
+| **index_beta.html** | Visual page builder (main app) - optimized & cleaned |
 | **showcase projects page.html** | Project gallery & portfolio |
 | **projects-manifest.json** | List of all projects to display |
 | **generate-manifest.js** | Auto-scanner for Node.js |
@@ -67,6 +67,11 @@ Your Projects
     ↓
 [Showcase] Reads manifest → displays gallery
 ```
+
+### Build System (Optimized)
+- **Manifest-Aware Export**: All exports include structured metadata
+- **Clean Codebase**: Deprecated functions removed, modern architecture only
+- **Import/Export Integration**: Seamless round-trip for editing existing projects
 
 ---
 
@@ -129,13 +134,29 @@ Choose from 11 pre-built responsive sections:
    - Description
    - Icon (emoji)
    - Folder Path (e.g., "my-project")
-3. Select which pages to export
-4. Download ZIP file
+3. Select pages to export:
+   - **Current Page** - Export only the active page
+   - **Selected Pages** - Choose specific pages via checkboxes
+   - **All Pages** - Export entire project
+4. Optional: Enter export password for copyright protection
+5. Download ZIP file
+
+**Export Options**:
+- **Single Page Export** → Downloads as individual HTML or ZIP (if images included)
+- **Multiple Pages Export** → Downloads as ZIP with manifest entry and assets folder
 
 **What You Get**:
-- `index.html` - Your website
-- `manifest-entry.json` - Ready to use in projects-manifest.json
+- `index.html` - Your website (or first page if multi-page)
+- `manifest-entry.json` - Pre-formatted for showcase gallery
 - `assets/` folder - All your images
+- Additional HTML files - One per page in multi-page exports
+
+**To Use Exported Project**:
+1. Extract ZIP file
+2. Copy folder to your project root
+3. Add `manifest-entry.json` content to `projects-manifest.json`
+4. Run generator script to update manifest
+5. Project appears in showcase gallery
 
 ---
 
