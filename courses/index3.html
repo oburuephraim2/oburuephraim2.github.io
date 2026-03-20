@@ -1,0 +1,1216 @@
+<!--implement ability to save and later import or continue from where one ended in the course. This includes saving quiz attempts, scores, and progress through the modules. The user should be able to export this data as a JSON file and later import it to resume their learning journey without losing any progress. Additionally, there should be an option to clear all saved progress for those who want to start fresh.-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Remote Training & Certification</title>
+    <style>
+        :root { --primary: #2e7d32; --secondary: #1976d2; --accent: #ffa000; --bg: #f4f7f6; --white: #ffffff; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        
+        /* Main Layout */
+        .page-wrapper { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        #sidebar {
+            width: 280px;
+            background: #f5f5f5;
+            border-right: 2px solid #ddd;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .sidebar-header {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .module {
+            margin-bottom: 20px;
+        }
+        .module-title {
+            font-weight: bold;
+            color: #333;
+            padding: 10px;
+            cursor: pointer;
+            background: #e8f5e9;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .module-title:hover {
+            background: #c8e6c9;
+        }
+        .module.collapsed .topics-list {
+            display: none;
+        }
+        .module-toggle { font-size: 12px; }
+        .topics-list {
+            padding-left: 10px;
+        }
+        .topic-item {
+            padding: 10px 12px;
+            margin-bottom: 5px;
+            background: white;
+            border-left: 4px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .topic-item:hover {
+            background: #f0f0f0;
+            border-left-color: var(--secondary);
+        }
+        .topic-item.active {
+            background: #c8e6c9;
+            border-left-color: var(--primary);
+            font-weight: bold;
+        }
+        .topic-status {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .topic-status.taken { color: var(--primary); }
+        .topic-status.not-taken { color: #999; }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .header-section { position: relative; margin-bottom: 30px; }
+        .header-section h1 { margin: 0 0 5px 0; }
+        .header-section p { margin: 5px 0; color: #666; }
+        .admin-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        /* Study Material Styles */
+        .study-section { background: #fff8e1; border-left: 6px solid var(--accent); padding: 20px; margin-bottom: 30px; border-radius: 8px; }
+        .material-content {
+            margin-bottom: 20px;
+        }
+        .material-topic {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+        }
+        .material-topic-title { font-weight: bold; font-size: 16px; color: #856404; margin-bottom: 10px; }
+        .material-topic-content { line-height: 1.6; }
+
+        /* Quiz Section */
+        .quiz-section { display: none; background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .quiz-section.active { display: block; }
+        .quiz-status { font-size: 14px; color: #666; margin-bottom: 15px; font-style: italic; }
+
+        /* Question Card */
+        .question-card { border-left: 6px solid var(--secondary); background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .option { display: block; background: white; border: 1px solid #ddd; margin: 8px 0; padding: 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .option:hover { background: #e3f2fd; }
+        .option input { margin-right: 12px; transform: scale(1.2); }
+
+        /* Feedback */
+        .feedback-text { margin-top: 10px; font-size: 0.9rem; font-style: italic; color: #555; display: none; }
+        .correct-ans { color: var(--primary); font-weight: bold; }
+
+        /* Buttons */
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #1b5e20; }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-secondary:hover { background: #1565c0; }
+        
+        .btn-group { display: flex; gap: 10px; }
+        .btn-group .btn { margin: 0; flex: 1; }
+
+        /* Results */
+        .results-section { display: none; }
+        .results-section.active { display: block; }
+        .score-box { font-size: 48px; font-weight: bold; color: var(--secondary); margin: 20px 0; text-align: center; }
+        .pass-msg { color: var(--primary); background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .fail-msg { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .progress-summary {
+            background: white;
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .progress-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        .progress-item:last-child { border-bottom: none; }
+
+        /* Admin Panel */
+        #admin-panel {
+            display: none;
+            background: #fff3e0;
+            border: 3px solid #ff9800;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(255,152,0,0.3);
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-wrapper { flex-direction: column; }
+            #sidebar { width: 100%; border-right: none; border-bottom: 2px solid #ddd; max-height: 250px; }
+            .main-content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+    <!-- SIDEBAR NAVIGATION -->
+    <div id="sidebar">
+        <div class="sidebar-header">📚 Course Modules</div>
+        <div id="modules-container"></div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="header-section">
+            <h1 id="main-title">Loading Training...</h1>
+            <p id="course-ver"></p>
+            <div style="position:absolute; top:0; right:0; display:flex; gap:10px;">
+                <button id="view-results-btn" onclick="showCertificationView()" class="admin-btn" style="background:var(--secondary); display:none;">📊 View Progress</button>
+                <button onclick="saveProgressManually()" class="admin-btn" style="background:#4caf50; display:none;" id="save-progress-btn">💾 Save Progress</button>
+                <button onclick="enterAdminMode()" class="admin-btn">🔧 ADMIN</button>
+            </div>
+        </div>
+
+        <!-- ADMIN PANEL -->
+        <div id="admin-panel">
+            <div class="admin-header">
+                <h3>🔧 ADMIN CONTROL PANEL</h3>
+                <button onclick="closeAdminPanel()" style="background:#666;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">Close</button>
+            </div>
+            
+            <h4>📚 Course Management</h4>
+            <p><strong>Load Course:</strong> Browse for any course JSON file (must match the required structure):</p>
+            <input type="file" id="course-json-input" accept=".json" style="width:100%; padding:10px; margin:10px 0; border:2px dashed #ff9800; border-radius:8px;" onchange="loadCourse(this)">
+            <div style="margin-top:15px;">
+                <button onclick="resetToDefault()" class="btn btn-secondary" style="width:auto;">Reset to Default Course</button>
+            </div>
+            
+            <hr style="margin:20px 0; border:none; border-top:1px solid #ddd;">
+            
+            <h4>💾 Progress & Backup</h4>
+            <p><strong>Save & Export:</strong> Download your progress and quiz history as a backup file:</p>
+            <button onclick="exportProgress()" class="btn btn-primary" style="width:auto; margin-bottom:10px;">📥 Export Progress to File</button>
+            
+            <p><strong>Import & Resume:</strong> Load progress from a previously saved backup file:</p>
+            <input type="file" id="progress-json-input" accept=".json" style="width:100%; padding:10px; margin:10px 0; border:2px dashed #4caf50; border-radius:8px;" onchange="importProgress(this)">
+            
+            <p><strong>Clear All Progress:</strong> Remove all saved progress and start fresh:</p>
+            <button onclick="clearAllProgress()" class="btn btn-secondary" style="width:auto; background:#d32f2f;">🗑️ Clear All Progress</button>
+            
+            <small style="color:#666; display:block; margin-top:10px;">💡 Tip: All data is saved locally in your browser. Export your progress as backup before clearing browser data.</small>
+        </div>
+        
+        <!-- RESUME MODAL -->
+        <div id="resume-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center; display:none;">
+            <div style="background:white; padding:30px; border-radius:12px; max-width:500px; box-shadow:0 4px 20px rgba(0,0,0,0.3); text-align:center;">
+                <h2 style="margin:0 0 10px 0; color:var(--primary);">👋 Welcome Back!</h2>
+                <p id="resume-message" style="margin:15px 0; color:#666; font-size:16px;"></p>
+                <div style="margin-top:25px; display:flex; gap:10px; justify-content:center;">
+                    <button onclick="resumeProgress()" class="btn btn-primary" style="width:auto; padding:12px 30px;">▶️ Resume from where I left off</button>
+                    <button onclick="startFresh()" class="btn btn-secondary" style="width:auto; padding:12px 30px; background:#999;">🆕 Start Fresh</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STUDY MATERIAL -->
+        <div id="study-material-section" class="study-section">
+            <h2 id="topic-title">Select a Topic</h2>
+            <div id="material-content" class="material-content"></div>
+        </div>
+
+        <!-- QUIZ SECTION -->
+        <div id="quiz-section" class="quiz-section">
+            <div id="quiz-start-area">
+                <div class="quiz-status" id="quiz-start-status">
+                    <span id="quiz-start-text">Ready to test your knowledge?</span>
+                    <span id="quiz-already-attempted" style="display:none;">✓ Score: <strong id="quiz-attempted-score">0%</strong></span>
+                </div>
+                <button id="quiz-start-btn" class="btn btn-primary" onclick="startTopicQuiz()">Start Topic Quiz</button>
+                <button id="quiz-retake-btn" class="btn btn-secondary" style="display:none;" onclick="resetQuizForRetake()">Retake Quiz</button>
+            </div>
+            
+            <div id="quiz-active-area" style="display:none;">
+                <div class="quiz-status">
+                    <span id="quiz-in-progress-text">Answer the questions below. Click "Submit" when ready.</span>
+                </div>
+                <div id="quiz-questions-container"></div>
+                <div class="btn-group">
+                    <button id="quiz-submit-btn" class="btn btn-primary" onclick="gradeTopicQuiz()">Submit Topic Quiz</button>
+                    <button id="quiz-cancel-btn" class="btn btn-secondary" onclick="cancelQuiz()" style="background:#999;">Cancel Quiz</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div id="results-section" class="results-section">
+            <h2>📊 Certification Progress</h2>
+            <div class="score-box" id="final-score">0%</div>
+            <div id="result-banner"></div>
+            <div class="progress-summary">
+                <h3>Quiz Completion Summary</h3>
+                <div id="progress-breakdown"></div>
+            </div>
+            <div style="text-align:center; margin-top:20px;">
+                <button class="btn btn-primary" onclick="backToLearning()" style="width:auto;padding:12px 30px;">← Back to Learning</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ====================== DEFAULT COURSE DATA (NEW MODULE STRUCTURE) ======================
+const defaultCourseData = {
+  "courseMetadata": {
+    "title": "Computer Hardware & Security Essentials",
+    "version": "v2.0 (Optional Quizzes)",
+    "passingScore": 70
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "title": "Module 1: Device Fundamentals",
+      "topics": [
+        {
+          "id": "t1",
+          "topic": "Input/Output Devices",
+          "content": "Input devices (Keyboard, Mouse) send data to the PC. Output devices (Monitor, Printer, Speakers) receive data from the computer.",
+          "questions": [
+            {
+              "id": 1,
+              "type": "multiple",
+              "text": "Identify all 'Output' devices from the list below:",
+              "options": ["Monitor", "Keyboard", "Laser Printer", "Webcam", "Speakers"],
+              "correct": [0, 2, 4],
+              "points": 2,
+              "feedback": "Correct! Monitors, Printers, and Speakers are output devices."
+            }
+          ]
+        },
+        {
+          "id": "t2",
+          "topic": "Device Connectivity",
+          "content": "USB, HDMI, and Ethernet are common connection types. USB is used for data and power, HDMI for video/audio display, and Ethernet for network connectivity.",
+          "questions": [
+            {
+              "id": 2,
+              "type": "single",
+              "text": "Which connector is primarily used for video and audio display output?",
+              "options": ["USB", "HDMI", "Ethernet", "Serial Port"],
+              "correct": [1],
+              "points": 1,
+              "feedback": "HDMI is the standard for video and audio display connectivity."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "title": "Module 2: Security Essentials",
+      "topics": [
+        {
+          "id": "t3",
+          "topic": "Password Security",
+          "content": "A strong password must have at least 12 characters and include a mix of uppercase letters, lowercase letters, numbers, and special symbols. Avoid common words and personal information.",
+          "questions": [
+            {
+              "id": 3,
+              "type": "single",
+              "text": "What is the minimum recommended length for a secure password?",
+              "options": ["6 characters", "8 characters", "12 characters", "16 characters"],
+              "correct": [2],
+              "points": 1,
+              "feedback": "12 characters is the modern cybersecurity standard."
+            }
+          ]
+        },
+        {
+          "id": "t4",
+          "topic": "Data Protection",
+          "content": "Encryption converts readable data into a coded form that requires a key to decode. Regular backups ensure data recovery in case of loss or corruption. Multi-factor authentication adds an extra security layer.",
+          "questions": [
+            {
+              "id": 4,
+              "type": "multiple",
+              "text": "Which practices enhance data security? (Select all that apply)",
+              "options": ["Regular backups", "Using public WiFi for sensitive data", "Encryption", "Multi-factor authentication", "Writing passwords on sticky notes"],
+              "correct": [0, 2, 3],
+              "points": 2,
+              "feedback": "Backups, encryption, and multi-factor authentication are best practices. Public WiFi and written passwords are security risks."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// ====================== GLOBAL STATE ======================
+let courseData = JSON.parse(JSON.stringify(defaultCourseData));
+let currentTopicId = null;
+let quizAttempts = {}; // { "topic_id": { score: 85, timestamp: "..." }, ... }
+
+// ====================== CORE ENGINE ======================
+function initSystem() {
+    // 1. Set Header
+    document.getElementById('main-title').innerText = courseData.courseMetadata.title;
+    document.getElementById('course-ver').innerText = courseData.courseMetadata.version;
+
+    // 2. Render Sidebar Navigation
+    const modulesContainer = document.getElementById('modules-container');
+    modulesContainer.innerHTML = '';
+    
+    courseData.modules.forEach(module => {
+        const moduleDiv = document.createElement('div');
+        moduleDiv.className = 'module';
+        moduleDiv.innerHTML = `
+            <div class="module-title" onclick="toggleModule(this)">
+                ${module.title}
+                <span class="module-toggle">▼</span>
+            </div>
+            <div class="topics-list">
+                ${module.topics.map(topic => `
+                    <div class="topic-item ${currentTopicId === topic.id ? 'active' : ''}" onclick="selectTopic('${topic.id}', event)">
+                        <span>${topic.topic}</span>
+                        <span class="topic-status ${quizAttempts[topic.id] ? 'taken' : 'not-taken'}">
+                            ${quizAttempts[topic.id] ? '✓' : '○'}
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        modulesContainer.appendChild(moduleDiv);
+    });
+
+    // 3. Load first topic by default
+    if (courseData.modules.length > 0 && courseData.modules[0].topics.length > 0 && !currentTopicId) {
+        selectTopic(courseData.modules[0].topics[0].id);
+    }
+}
+
+function toggleModule(element) {
+    element.parentElement.classList.toggle('collapsed');
+}
+
+function selectTopic(topicId, event) {
+    if (event) event.stopPropagation();
+    
+    currentTopicId = topicId;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === topicId);
+        if (topicData) break;
+    }
+    
+    if (!topicData) return;
+    
+    // Update sidebar highlighting
+    document.querySelectorAll('.topic-item').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[onclick="selectTopic('${topicId}', event)"]`)?.classList.add('active');
+    
+    // Update study material
+    document.getElementById('topic-title').innerText = topicData.topic;
+    document.getElementById('material-content').innerHTML = `
+        <div class="material-topic">
+            <div class="material-topic-content">${topicData.content}</div>
+        </div>
+    `;
+    
+    // Update quiz section
+    renderTopicQuiz(topicData);
+    
+    // Hide results section
+    document.getElementById('results-section').classList.remove('active');
+    
+    // Auto-save current progress
+    saveCurrentProgress();
+    
+    window.scrollTo(0, 0);
+}
+
+function renderTopicQuiz(topicData) {
+    const quizSection = document.getElementById('quiz-section');
+    
+    if (!topicData.questions || topicData.questions.length === 0) {
+        document.getElementById('quiz-section').style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('quiz-section').style.display = 'block';
+    
+    // Check if quiz already taken
+    const isAttempted = quizAttempts[topicData.id];
+    
+    // Reset to start area (buttons visible, questions hidden)
+    document.getElementById('quiz-start-area').style.display = 'block';
+    document.getElementById('quiz-active-area').style.display = 'none';
+    document.getElementById('quiz-questions-container').innerHTML = '';
+    
+    if (isAttempted) {
+        // Previously attempted - show retake option
+        document.getElementById('quiz-start-text').style.display = 'none';
+        document.getElementById('quiz-already-attempted').style.display = 'inline';
+        document.getElementById('quiz-attempted-score').innerText = isAttempted.score.toFixed(1) + '%';
+        document.getElementById('quiz-start-btn').style.display = 'none';
+        document.getElementById('quiz-retake-btn').style.display = 'block';
+    } else {
+        // Not attempted yet - show start button
+        document.getElementById('quiz-start-text').style.display = 'block';
+        document.getElementById('quiz-already-attempted').style.display = 'none';
+        document.getElementById('quiz-start-btn').style.display = 'block';
+        document.getElementById('quiz-retake-btn').style.display = 'none';
+    }
+}
+
+function startTopicQuiz() {
+    if (!currentTopicId) return;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    if (!topicData || !topicData.questions) return;
+    
+    // Hide start area, show active quiz area
+    document.getElementById('quiz-start-area').style.display = 'none';
+    document.getElementById('quiz-active-area').style.display = 'block';
+    
+    // Ensure buttons are visible (reset from previous submission)
+    document.getElementById('quiz-submit-btn').style.display = '';
+    document.getElementById('quiz-cancel-btn').style.display = '';
+    
+    // Render questions
+    const questionsContainer = document.getElementById('quiz-questions-container');
+    questionsContainer.innerHTML = '';
+    
+    topicData.questions.forEach((q, qIdx) => {
+        const inputType = q.type === 'multiple' ? 'checkbox' : 'radio';
+        const optionsHTML = q.options.map((opt, oIdx) => `
+            <label class="option">
+                <input type="${inputType}" name="q_${topicData.id}_${qIdx}" value="${oIdx}"> ${opt}
+            </label>
+        `).join('');
+        
+        questionsContainer.innerHTML += `
+            <div class="question-card" id="card-${topicData.id}-${qIdx}">
+                <div style="font-weight:bold; margin-bottom:10px;">${qIdx + 1}. ${q.text}</div>
+                ${optionsHTML}
+                <div class="feedback-text" id="feed-${topicData.id}-${qIdx}"><strong>Note:</strong> ${q.feedback}</div>
+            </div>
+        `;
+    });
+    
+    window.scrollTo(0, document.getElementById('quiz-section').offsetTop);
+}
+
+function cancelQuiz() {
+    if (!currentTopicId) return;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    // Clear answers
+    document.querySelectorAll(`input[name^="q_${currentTopicId}_"]`).forEach(el => el.checked = false);
+    
+    // Hide feedback
+    document.querySelectorAll(`div[id^="feed-${currentTopicId}"]`).forEach(el => el.style.display = 'none');
+    
+    // Go back to start area
+    renderTopicQuiz(topicData);
+}
+
+function gradeTopicQuiz() {
+    if (!currentTopicId) return;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    if (!topicData || !topicData.questions) return;
+    
+    let totalEarned = 0;
+    let maxPossible = 0;
+    
+    topicData.questions.forEach((q, qIdx) => {
+        maxPossible += q.points;
+        const selected = Array.from(document.querySelectorAll(`input[name="q_${currentTopicId}_${qIdx}"]:checked`))
+                              .map(el => parseInt(el.value));
+        
+        let qScore = 0;
+        if (q.type === 'single') {
+            if (selected.length > 0 && selected[0] === q.correct[0]) qScore = q.points;
+        } else {
+            const weight = q.points / q.correct.length;
+            let correctCount = 0;
+            selected.forEach(val => {
+                if (q.correct.includes(val)) correctCount++;
+            });
+            qScore = correctCount * weight;
+        }
+        totalEarned += Math.max(0, qScore);
+        
+        // Reveal feedback
+        document.getElementById(`feed-${currentTopicId}-${qIdx}`).style.display = 'block';
+    });
+    
+    const topicScore = (totalEarned / maxPossible) * 100;
+    
+    // Store quiz attempt
+    quizAttempts[currentTopicId] = {
+        score: topicScore,
+        timestamp: new Date().toISOString()
+    };
+    
+    saveQuizHistory();
+    updateSidebar();
+    
+    // Show the View Progress button
+    document.getElementById('view-results-btn').style.display = 'block';
+    
+    // Hide active quiz area
+    document.getElementById('quiz-active-area').style.display = 'none';
+    document.getElementById('quiz-submit-btn').style.display = 'none';
+    document.getElementById('quiz-cancel-btn').style.display = 'none';
+    
+    // Show a completion message with score and clear next steps
+    const questionsContainer = document.getElementById('quiz-questions-container');
+    const scoreMessage = document.createElement('div');
+    scoreMessage.style.cssText = 'background:#e8f5e9; border-left:6px solid var(--primary); padding:25px; border-radius:8px; margin-top:20px; text-align:center;';
+    
+    // Determine if passed this topic
+    const topicPassScore = courseData.courseMetadata.passingScore;
+    const topicPassed = topicScore >= topicPassScore;
+    const passStatus = topicPassed ? '✓ PASSED' : '○ Attempt Recorded';
+    const passColor = topicPassed ? 'var(--primary)' : '#ff9800';
+    
+    scoreMessage.innerHTML = `
+        <h3 style="color:var(--primary); margin:0 0 10px 0;">✓ Quiz Submitted!</h3>
+        <div style="font-size:42px; font-weight:bold; color:var(--secondary); margin:15px 0; font-family:'Arial Black';">
+            ${topicScore.toFixed(1)}%
+        </div>
+        <p style="color:${passColor}; font-weight:bold; font-size:16px; margin:10px 0;">${passStatus}</p>
+        <hr style="border:none; border-top:2px solid #ddd; margin:15px 0;">
+        <p style="margin:15px 0; color:#555; font-size:14px;">
+            📚 <strong>What's Next?</strong><br>
+            You can review your answers above, retake this quiz, or view your overall progress and certification status.
+        </p>
+        <div style="margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button onclick="showCertificationView()" class="btn btn-primary" style="width:auto; padding:10px 25px; background:var(--secondary); margin:0;">📊 View Final Certification</button>
+            <button onclick="resetQuizForRetake()" class="btn btn-secondary" style="width:auto; padding:10px 25px; background:#666; margin:0;">🔄 Retake This Quiz</button>
+        </div>
+    `;
+    questionsContainer.appendChild(scoreMessage);
+    
+    // Show the quiz area so the completion message is visible
+    document.getElementById('quiz-active-area').style.display = 'block';
+    
+    // Show start area without calling renderTopicQuiz (which clears the container)
+    document.getElementById('quiz-start-area').style.display = 'block';
+    
+    alert(`✓ Quiz submitted! Your score: ${topicScore.toFixed(1)}%\n\nClick "View Final Certification" to see your overall progress and download your certificate if you've passed!`);
+}
+
+function resetQuizForRetake() {
+    if (!currentTopicId) return;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    if (!topicData) return;
+    
+    // Clear answers
+    document.querySelectorAll(`input[name^="q_${currentTopicId}_"]`).forEach(el => el.checked = false);
+    
+    // Hide feedback
+    document.querySelectorAll(`div[id^="feed-${currentTopicId}"]`).forEach(el => el.style.display = 'none');
+    
+    // Remove score message
+    const scoreMessage = document.querySelector('[style*="e8f5e9"]');
+    if (scoreMessage) scoreMessage.remove();
+    
+    // Directly start the quiz again with cleared state
+    startTopicQuiz();
+}
+
+function updateSidebar() {
+    document.querySelectorAll('.topic-item').forEach(el => {
+        const topicText = el.querySelector('span:first-child')?.innerText;
+        let topicId = null;
+        for (let module of courseData.modules) {
+            const t = module.topics.find(topic => topic.topic === topicText);
+            if (t) {
+                topicId = t.id;
+                break;
+            }
+        }
+        
+        const statusEl = el.querySelector('.topic-status');
+        if (topicId && quizAttempts[topicId]) {
+            statusEl.classList.remove('not-taken');
+            statusEl.classList.add('taken');
+            statusEl.innerText = '✓';
+        }
+    });
+}
+
+function showCertificationView() {
+    // Hide study and quiz sections
+    document.getElementById('study-material-section').style.display = 'none';
+    document.getElementById('quiz-section').style.display = 'none';
+    document.getElementById('results-section').classList.add('active');
+    
+    // Calculate overall score
+    const attemptedQuizzes = Object.values(quizAttempts);
+    if (attemptedQuizzes.length === 0) {
+        alert("❌ You must attempt at least one quiz to view results.");
+        return;
+    }
+    
+    const overallScore = attemptedQuizzes.reduce((sum, q) => sum + q.score, 0) / attemptedQuizzes.length;
+    const passingScore = courseData.courseMetadata.passingScore;
+    const isPassing = overallScore >= passingScore;
+    
+    document.getElementById('final-score').innerText = overallScore.toFixed(1) + '%';
+    
+    // Build progress breakdown
+    const breakdown = document.getElementById('progress-breakdown');
+    const topicItems = [];
+    let masteredTopics = [];
+    
+    for (let module of courseData.modules) {
+        for (let topic of module.topics) {
+            const attempt = quizAttempts[topic.id];
+            if (attempt) {
+                const isPassed = attempt.score >= passingScore;
+                const statusIcon = isPassed ? '✓' : '○';
+                const statusColor = isPassed ? 'var(--primary)' : '#ff9800';
+                topicItems.push(`
+                    <div class="progress-item" style="border-left:4px solid ${statusColor}; padding-left:12px;">
+                        <span><strong>${statusIcon} ${topic.topic}</strong></span>
+                        <span style="color:${statusColor}; font-weight:bold;">${attempt.score.toFixed(1)}%</span>
+                    </div>
+                `);
+                if (isPassed) {
+                    masteredTopics.push({ topic, attempt, module });
+                }
+            }
+        }
+    }
+    
+    if (topicItems.length === 0) {
+        breakdown.innerHTML = '<p style="color:#999;">No quizzes attempted yet.</p>';
+    } else {
+        breakdown.innerHTML = topicItems.join('');
+    }
+    
+    // Show pass/fail banner
+    const banner = document.getElementById('result-banner');
+    if (isPassing) {
+        banner.innerHTML = `
+            <div class="pass-msg">
+                <h3>🎉 CONGRATULATIONS!</h3>
+                <p>Your average quiz score of <strong>${overallScore.toFixed(1)}%</strong> exceeds the ${passingScore}% passing requirement!</p>
+                <p style="margin:10px 0 0 0;">You have successfully mastered <strong>${masteredTopics.length}</strong> topic(s).</p>
+                <button class="btn btn-primary" onclick="generateCert(${overallScore}, ${attemptedQuizzes.length})" style="width:auto; padding:10px 30px; margin-top:15px;">📥 Download Certificate</button>
+            </div>
+        `;
+    } else {
+        banner.innerHTML = `
+            <div class="fail-msg">
+                <h3>📈 Keep Learning</h3>
+                <p>Your current average is <strong>${overallScore.toFixed(1)}%</strong>. You need <strong>${passingScore}%</strong> to be certified.</p>
+                <p style="margin:10px 0 0 0;">Complete or retake <strong>${attemptedQuizzes.length > 0 ? 'more' : 'some'} quizzes</strong> to improve your score!</p>
+            </div>
+        `;
+    }
+    
+    // Show mastered content only if passing
+    if (isPassing && masteredTopics.length > 0) {
+        const masterySection = document.createElement('div');
+        masterySection.style.cssText = 'background:#f0f8f5; border-left:6px solid var(--primary); padding:20px; border-radius:8px; margin-top:30px;';
+        masterySection.innerHTML = `
+            <h3 style="color:var(--primary); margin-top:0;">🏆 Mastered Content</h3>
+            <p style="color:#666; margin-bottom:20px;">Below is the content you have successfully mastered:</p>
+        `;
+        
+        masteredTopics.forEach((item, idx) => {
+            const masteryItem = document.createElement('div');
+            masteryItem.style.cssText = 'background:white; border-left:4px solid var(--primary); padding:15px; margin-bottom:15px; border-radius:6px;';
+            masteryItem.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="color:#333; margin:0; padding:0;">${idx + 1}. ${item.topic.topic}</h4>
+                    <span style="background:var(--primary); color:white; padding:5px 12px; border-radius:20px; font-weight:bold; font-size:12px;">MASTERED: ${item.attempt.score.toFixed(1)}%</span>
+                </div>
+                <div style="color:#666; line-height:1.6; font-size:14px;">
+                    ${item.topic.content}
+                </div>
+            `;
+            masterySection.appendChild(masteryItem);
+        });
+        
+        // Insert mastery section after progress summary
+        const resultsSection = document.getElementById('results-section');
+        const progressSummary = resultsSection.querySelector('.progress-summary');
+        if (progressSummary && progressSummary.nextSibling) {
+            resultsSection.insertBefore(masterySection, progressSummary.nextSibling);
+        } else if (progressSummary) {
+            resultsSection.insertBefore(masterySection, progressSummary.nextSibling);
+        }
+    }
+    
+    window.scrollTo(0, 0);
+}
+
+function backToLearning() {
+    // Show study and quiz sections
+    document.getElementById('study-material-section').style.display = 'block';
+    document.getElementById('quiz-section').style.display = 'block';
+    document.getElementById('results-section').classList.remove('active');
+    
+    // Remove dynamically created mastery section
+    const masterySection = document.querySelector('[style*="f0f8f5"]');
+    if (masterySection) masterySection.remove();
+    
+    // Return to the currently selected topic
+    if (currentTopicId) {
+        selectTopic(currentTopicId);
+    } else if (courseData.modules.length > 0 && courseData.modules[0].topics.length > 0) {
+        selectTopic(courseData.modules[0].topics[0].id);
+    }
+}
+
+// ====================== CERTIFICATE ======================
+function generateCert(score, numQuizzes) {
+    const name = prompt("Please enter your full name for the certificate:");
+    if (!name) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1600; canvas.height = 1131;
+
+    ctx.fillStyle = "white"; ctx.fillRect(0, 0, 1600, 1131);
+    ctx.strokeStyle = "#1976d2"; ctx.lineWidth = 40; ctx.strokeRect(20, 20, 1560, 1091);
+    
+    ctx.textAlign = "center"; ctx.fillStyle = "#333";
+    ctx.font = "bold 80px Arial"; ctx.fillText("CERTIFICATE OF COMPLETION", 800, 300);
+    ctx.font = "italic 40px Arial"; ctx.fillText("This is to certify that", 800, 420);
+    ctx.font = "bold 90px Arial"; ctx.fillStyle = "#2e7d32"; ctx.fillText(name.toUpperCase(), 800, 550);
+    ctx.fillStyle = "#333"; ctx.font = "40px Arial"; ctx.fillText(`Has successfully completed: ${courseData.courseMetadata.title}`, 800, 680);
+    ctx.font = "30px Arial"; ctx.fillText(`Overall Score: ${score.toFixed(1)}% | Quizzes Completed: ${numQuizzes} | Date: ${new Date().toLocaleDateString()}`, 800, 800);
+    
+    const link = document.createElement('a');
+    link.download = `Cert_${name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().getTime()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+// ====================== COMPATIBILITY & DATA CONVERSION ======================
+function convertOldFormatToNew(oldData) {
+    // Convert old format (studyMaterial + questions) to new format (modules with topics)
+    if (!oldData.modules && oldData.studyMaterial && oldData.questions) {
+        const modules = [];
+        const questionsArray = oldData.questions || [];
+        let questionIndex = 0;
+        
+        oldData.studyMaterial.forEach((material, matIdx) => {
+            const moduleId = `m${matIdx + 1}`;
+            const topicId = `t${matIdx + 1}`;
+            
+            // Group questions for this topic (simple distribution)
+            const topicQuestions = [];
+            const questionsPerTopic = Math.ceil(questionsArray.length / oldData.studyMaterial.length);
+            for (let i = 0; i < questionsPerTopic && questionIndex < questionsArray.length; i++) {
+                topicQuestions.push(questionsArray[questionIndex++]);
+            }
+            
+            modules.push({
+                id: moduleId,
+                title: `Module ${matIdx + 1}`,
+                topics: [
+                    {
+                        id: topicId,
+                        topic: material.topic,
+                        content: material.content,
+                        questions: topicQuestions
+                    }
+                ]
+            });
+        });
+        
+        return {
+            courseMetadata: oldData.courseMetadata,
+            modules: modules
+        };
+    }
+    return oldData; // Already in new format
+}
+
+// ====================== ADMIN & LOCAL FILE LOADING ======================
+function enterAdminMode() {
+    const entered = prompt("🔑 Enter Admin Password:");
+    if (entered === "E@ss1234") {
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-panel').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert("❌ Incorrect password.");
+    }
+}
+
+function closeAdminPanel() {
+    document.getElementById('admin-panel').style.display = 'none';
+}
+
+function loadCourse(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            let loadedData = JSON.parse(e.target.result);
+            
+            // Check if old format and convert if needed (backward compatibility)
+            if (loadedData.studyMaterial && !loadedData.modules) {
+                console.log("Detected old JSON format - converting to new format...");
+                loadedData = convertOldFormatToNew(loadedData);
+            }
+            
+            // Validate module structure
+            if (!loadedData.courseMetadata || !loadedData.modules) {
+                throw new Error("Missing required sections (courseMetadata, modules)");
+            }
+            
+            // Check modules structure
+            if (!Array.isArray(loadedData.modules) || loadedData.modules.length === 0) {
+                throw new Error("modules must be a non-empty array");
+            }
+            
+            for (let module of loadedData.modules) {
+                if (!module.id || !module.title || !module.topics || !Array.isArray(module.topics)) {
+                    throw new Error("Each module must have id, title, and topics array");
+                }
+                for (let topic of module.topics) {
+                    if (!topic.id || !topic.topic || !topic.content) {
+                        throw new Error("Each topic must have id, topic, and content");
+                    }
+                }
+            }
+            
+            courseData = loadedData;
+            currentTopicId = null;
+            quizAttempts = {};
+            localStorage.setItem('loadedCourseData', JSON.stringify(courseData));
+            localStorage.removeItem('quizAttempts');
+            
+            initSystem();
+            alert(`✅ Course "${courseData.courseMetadata.title}" loaded successfully!\nVersion: ${courseData.courseMetadata.version}`);
+            closeAdminPanel();
+        } catch (err) {
+            alert("❌ Invalid JSON file.\n\n✓ SUPPORTED FORMATS:\n\n📌 NEW FORMAT:\n{\n  \"courseMetadata\": {...},\n  \"modules\": [{\n    \"id\": \"m1\",\n    \"title\": \"Module 1\",\n    \"topics\": [{\n      \"id\": \"t1\",\n      \"topic\": \"Topic Name\",\n      \"content\": \"<html>...\",\n      \"questions\": [...]\n    }]\n  }]\n}\n\n📌 OLD FORMAT (auto-converts):\n{\n  \"courseMetadata\": {...},\n  \"studyMaterial\": [{...}],\n  \"questions\": [...]\n}\n\n⚠️ Error details: " + err.message);
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function resetToDefault() {
+    if (confirm("Reset to the built-in default course? This will clear your quiz history.")) {
+        courseData = JSON.parse(JSON.stringify(defaultCourseData));
+        currentTopicId = null;
+        quizAttempts = {};
+        localStorage.removeItem('loadedCourseData');
+        localStorage.removeItem('quizAttempts');
+        initSystem();
+        alert("✅ Reset to default course.");
+        closeAdminPanel();
+    }
+}
+
+// ====================== PERSISTENCE (localStorage) ======================
+function loadSavedCourse() {
+    const saved = localStorage.getItem('loadedCourseData');
+    if (saved) {
+        try {
+            courseData = JSON.parse(saved);
+            console.log("Loaded saved course from browser storage");
+        } catch (e) {
+            console.warn("Saved course corrupted – using default");
+            courseData = JSON.parse(JSON.stringify(defaultCourseData));
+            localStorage.removeItem('loadedCourseData');
+        }
+    }
+}
+
+function loadQuizHistory() {
+    const saved = localStorage.getItem('quizAttempts');
+    if (saved) {
+        try {
+            quizAttempts = JSON.parse(saved);
+            console.log("Loaded quiz history from browser storage");
+            // Show View Results button if quizzes have been attempted
+            if (Object.keys(quizAttempts).length > 0) {
+                document.getElementById('view-results-btn').style.display = 'block';
+            }
+        } catch (e) {
+            console.warn("Quiz history corrupted – reset");
+            quizAttempts = {};
+        }
+    }
+}
+
+function saveQuizHistory() {
+    localStorage.setItem('quizAttempts', JSON.stringify(quizAttempts));
+}
+
+// ====================== PROGRESS TRACKING & RESUME ======================
+function saveCurrentProgress() {
+    const progressData = {
+        currentTopicId: currentTopicId,
+        timestamp: new Date().toISOString(),
+        totalAttempts: Object.keys(quizAttempts).length
+    };
+    localStorage.setItem('currentProgress', JSON.stringify(progressData));
+}
+
+function loadCurrentProgress() {
+    const saved = localStorage.getItem('currentProgress');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.warn("Progress data corrupted");
+            return null;
+        }
+    }
+    return null;
+}
+
+function showResumeModal() {
+    const currentProgress = loadCurrentProgress();
+    const quizHistoryExists = Object.keys(quizAttempts).length > 0;
+    
+    if (!currentProgress || !quizHistoryExists) return;
+    
+    // Find the topic name
+    let topicName = "your last lesson";
+    for (let module of courseData.modules) {
+        const topic = module.topics.find(t => t.id === currentProgress.currentTopicId);
+        if (topic) {
+            topicName = topic.topic;
+            break;
+        }
+    }
+    
+    const lastSession = new Date(currentProgress.timestamp);
+    const timeAgo = getTimeAgoString(lastSession);
+    
+    document.getElementById('resume-message').innerText = `You were studying "${topicName}" ${timeAgo}. Would you like to continue where you left off?`;
+    document.getElementById('resume-modal').style.display = 'flex';
+}
+
+function getTimeAgoString(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+}
+
+function resumeProgress() {
+    const currentProgress = loadCurrentProgress();
+    if (currentProgress && currentProgress.currentTopicId) {
+        closeResumeModal();
+        selectTopic(currentProgress.currentTopicId);
+        // Scroll into view with a slight delay to ensure DOM updates
+        setTimeout(() => {
+            document.querySelector(`[onclick="selectTopic('${currentProgress.currentTopicId}', event)"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
+}
+
+function startFresh() {
+    closeResumeModal();
+    if (courseData.modules.length > 0 && courseData.modules[0].topics.length > 0) {
+        selectTopic(courseData.modules[0].topics[0].id);
+    }
+}
+
+function closeResumeModal() {
+    document.getElementById('resume-modal').style.display = 'none';
+}
+
+function saveProgressManually() {
+    alert("✅ Progress saved!\n\n📊 Current Status:\n• Topic: " + (currentTopicId ? "In progress" : "Not started") + "\n• Quizzes Completed: " + Object.keys(quizAttempts).length + "\n\nYour progress is automatically saved to your browser. Use Export to create a backup file for extra safety.");
+}
+
+function exportProgress() {
+    const progressData = {
+        exportDate: new Date().toISOString(),
+        courseTitle: courseData.courseMetadata.title,
+        courseVersion: courseData.courseMetadata.version,
+        quizAttempts: quizAttempts,
+        currentProgress: loadCurrentProgress(),
+        totalQuizzesAttempted: Object.keys(quizAttempts).length,
+        averageScore: Object.keys(quizAttempts).length > 0 
+            ? (Object.values(quizAttempts).reduce((sum, q) => sum + q.score, 0) / Object.keys(quizAttempts).length).toFixed(1)
+            : 0
+    };
+    
+    const dataStr = JSON.stringify(progressData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `progress_backup_${new Date().getTime()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    alert("✅ Progress exported successfully!\n\nFile: progress_backup_[timestamp].json\n\n📊 Backup contains:\n• Quiz history and scores\n• Current topic\n• Course information");
+}
+
+function importProgress(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // Validate backup format
+            if (!importedData.quizAttempts || !importedData.currentProgress) {
+                throw new Error("Invalid progress backup format");
+            }
+            
+            // Prompt for confirmation
+            if (confirm(`📥 Import Progress Backup?\n\nCourse: ${importedData.courseTitle}\nQuizzes Completed: ${importedData.totalQuizzesAttempted}\nAverage Score: ${importedData.averageScore}%\nExported: ${new Date(importedData.exportDate).toLocaleDateString()}\n\nThis will restore your quiz history and last viewed topic.`)) {
+                // Restore data
+                quizAttempts = importedData.quizAttempts;
+                saveQuizHistory();
+                localStorage.setItem('currentProgress', JSON.stringify(importedData.currentProgress));
+                
+                // Update UI
+                updateSidebar();
+                if (Object.keys(quizAttempts).length > 0) {
+                    document.getElementById('view-results-btn').style.display = 'block';
+                    document.getElementById('save-progress-btn').style.display = 'block';
+                }
+                
+                alert("✅ Progress restored successfully!\n\n📖 Resuming from: " + (importedData.currentProgress?.currentTopicId ? "Last lesson" : "Beginning"));
+                closeAdminPanel();
+                
+                // Reload the UI
+                if (importedData.currentProgress?.currentTopicId) {
+                    setTimeout(() => resumeProgress(), 500);
+                }
+            }
+            
+            // Clear file input
+            input.value = '';
+        } catch (err) {
+            alert("❌ Failed to import progress backup.\n\nError: " + err.message + "\n\nMake sure you're importing a valid progress backup file exported from this system.");
+            console.error(err);
+            input.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
+function clearAllProgress() {
+    if (confirm("⚠️ Clear ALL Progress?\n\nThis will permanently delete:\n• All quiz scores and history\n• Current topic position\n• Any saved progress\n\nThis action CANNOT be undone. Consider exporting first!")) {
+        if (confirm("🚨 Are you absolutely sure? This will erase all your learning progress.")) {
+            quizAttempts = {};
+            currentTopicId = null;
+            localStorage.removeItem('quizAttempts');
+            localStorage.removeItem('currentProgress');
+            document.getElementById('view-results-btn').style.display = 'none';
+            document.getElementById('save-progress-btn').style.display = 'none';
+            initSystem();
+            alert("✅ All progress cleared. Starting fresh!");
+            closeAdminPanel();
+        }
+    }
+}
+
+// ====================== STARTUP ======================
+window.onload = function() {
+    loadSavedCourse();
+    loadQuizHistory();
+    initSystem();
+    
+    // Show save button if there's progress to save
+    if (Object.keys(quizAttempts).length > 0) {
+        document.getElementById('save-progress-btn').style.display = 'block';
+    }
+    
+    // Show resume modal if there's saved progress
+    setTimeout(() => showResumeModal(), 500);
+};
+</script>
+</body>
+</html>
