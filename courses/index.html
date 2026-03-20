@@ -6,675 +6,996 @@
     <title>Professional Remote Training & Certification</title>
     <style>
         :root { --primary: #2e7d32; --secondary: #1976d2; --accent: #ffa000; --bg: #f4f7f6; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 900px; margin: auto; background: var(--white); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
         
-        /* Progress Bar */
-        .progress-section { margin-bottom: 30px; }
-        .progress-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; color: var(--secondary); }
-        .progress-bar { width: 100%; height: 12px; background: #e0e0e0; border-radius: 6px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--primary); transition: width 0.3s ease; }
+        /* Main Layout */
+        .page-wrapper { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        #sidebar {
+            width: 280px;
+            background: #f5f5f5;
+            border-right: 2px solid #ddd;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .sidebar-header {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        .module {
+            margin-bottom: 20px;
+        }
+        .module-title {
+            font-weight: bold;
+            color: #333;
+            padding: 10px;
+            cursor: pointer;
+            background: #e8f5e9;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .module-title:hover {
+            background: #c8e6c9;
+        }
+        .module.collapsed .topics-list {
+            display: none;
+        }
+        .module-toggle { font-size: 12px; }
+        .topics-list {
+            padding-left: 10px;
+        }
+        .topic-item {
+            padding: 10px 12px;
+            margin-bottom: 5px;
+            background: white;
+            border-left: 4px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .topic-item:hover {
+            background: #f0f0f0;
+            border-left-color: var(--secondary);
+        }
+        .topic-item.active {
+            background: #c8e6c9;
+            border-left-color: var(--primary);
+            font-weight: bold;
+        }
+        .topic-status {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .topic-status.taken { color: var(--primary); }
+        .topic-status.not-taken { color: #999; }
 
-        /* Study Section */
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .header-section { position: relative; margin-bottom: 30px; }
+        .header-section h1 { margin: 0 0 5px 0; }
+        .header-section p { margin: 5px 0; color: #666; }
+        .admin-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        /* Study Material Styles */
         .study-section { background: #fff8e1; border-left: 6px solid var(--accent); padding: 20px; margin-bottom: 30px; border-radius: 8px; }
-        .topic-content { color: #333; line-height: 1.6; }
+        .material-content {
+            margin-bottom: 20px;
+        }
+        .material-topic {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+        }
+        .material-topic-title { font-weight: bold; font-size: 16px; color: #856404; margin-bottom: 10px; }
+        .material-topic-content { line-height: 1.6; }
 
-        /* Question Cards */
-        .question-card { border-left: 6px solid var(--secondary); background: #f9f9f9; padding: 25px; margin-bottom: 20px; border-radius: 8px; }
-        .question-header { font-weight: bold; margin-bottom: 10px; }
+        /* Quiz Section */
+        .quiz-section { display: none; background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .quiz-section.active { display: block; }
+        .quiz-status { font-size: 14px; color: #666; margin-bottom: 15px; font-style: italic; }
+
+        /* Question Card */
+        .question-card { border-left: 6px solid var(--secondary); background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
         .option { display: block; background: white; border: 1px solid #ddd; margin: 8px 0; padding: 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
         .option:hover { background: #e3f2fd; }
         .option input { margin-right: 12px; transform: scale(1.2); }
-        .option.correct { background: #c8e6c9; border-color: var(--primary); }
-        .option.incorrect { background: #ffcdd2; border-color: #d32f2f; }
-        .feedback-text { margin-top: 10px; font-size: 0.9rem; font-style: italic; color: #555; display: none; border-top: 1px solid #ddd; padding-top: 10px; }
-        .feedback-text.show { display: block; }
 
-        /* Result Banner */
-        .topic-result { margin-top: 20px; padding: 15px; border-radius: 8px; text-align: center; }
-        .topic-result.pass { background: #e8f5e9; color: var(--primary); }
-        .topic-result.fail { background: #ffebee; color: #d32f2f; }
-        .topic-score { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        /* Feedback */
+        .feedback-text { margin-top: 10px; font-size: 0.9rem; font-style: italic; color: #555; display: none; }
+        .correct-ans { color: var(--primary); font-weight: bold; }
 
         /* Buttons */
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover:not(:disabled) { background: #1b5e20; }
+        .btn-primary:hover { background: #1b5e20; }
         .btn-secondary { background: var(--secondary); color: white; }
-        .btn-secondary:hover:not(:disabled) { background: #1565c0; }
-        .btn:disabled { background: #ccc; color: #999; cursor: not-allowed; opacity: 0.6; }
+        .btn-secondary:hover { background: #1565c0; }
+        
         .btn-group { display: flex; gap: 10px; }
-        .btn-group .btn { flex: 1; margin: 0; }
+        .btn-group .btn { margin: 0; flex: 1; }
 
-        /* Final Results */
-        #final-results { display: none; text-align: center; margin-top: 30px; }
-        .score-box { font-size: 50px; font-weight: bold; color: var(--secondary); margin: 10px 0; }
-        .pass-msg { color: var(--primary); background: #e8f5e9; padding: 20px; border-radius: 8px; }
-        .fail-msg { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; }
+        /* Results */
+        .results-section { display: none; }
+        .results-section.active { display: block; }
+        .score-box { font-size: 48px; font-weight: bold; color: var(--secondary); margin: 20px 0; text-align: center; }
+        .pass-msg { color: var(--primary); background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .fail-msg { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .progress-summary {
+            background: white;
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .progress-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        .progress-item:last-child { border-bottom: none; }
 
         /* Admin Panel */
-        #admin-panel { display: none; background: #fff3e0; border: 3px solid #ff9800; padding: 20px; border-radius: 12px; margin: 20px 0; }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .admin-btn { background: #ff9800; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        /* Validation Warning */
-        .warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        #admin-panel {
+            display: none;
+            background: #fff3e0;
+            border: 3px solid #ff9800;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(255,152,0,0.3);
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-wrapper { flex-direction: column; }
+            #sidebar { width: 100%; border-right: none; border-bottom: 2px solid #ddd; max-height: 250px; }
+            .main-content { padding: 20px; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header id="course-header" style="position:relative;">
-        <h1 id="main-title">Loading Training...</h1>
-        <p id="course-ver"></p>
-        <button onclick="enterAdminMode()" class="admin-btn" style="position:absolute; top:10px; right:10px;">🔧 ADMIN</button>
-    </header>
-
-    <div id="admin-panel">
-        <div class="admin-header">
-            <h3>🔧 ADMIN CONTROL PANEL</h3>
-            <button onclick="closeAdminPanel()" style="background:#666;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">Close</button>
-        </div>
-        <p><strong>Upload a course JSON file:</strong></p>
-        <input type="file" id="course-json-input" accept=".json" onchange="loadCourse(this)" style="margin-bottom: 10px;">
-        <button onclick="resetToDefault()" class="btn" style="background:#666;color:white;padding:10px 25px; font-size: 14px; margin-bottom: 0;">Reset to Default</button>
-        <p style="font-size: 0.85em; margin-top: 15px; color: #666;">
-            <strong>Course JSON Format:</strong> Must include <code>courseMetadata</code> (title, version, passingScore), <code>studyMaterial</code> (array of topics), and <code>questions</code> (array). Each question can optionally include <code>topicId</code> (auto-assigned if missing).
-        </p>
+<div class="page-wrapper">
+    <!-- SIDEBAR NAVIGATION -->
+    <div id="sidebar">
+        <div class="sidebar-header">📚 Course Modules</div>
+        <div id="modules-container"></div>
     </div>
 
-    <!-- Progress Bar -->
-    <div class="progress-section">
-        <div class="progress-info">
-            <span>Section <span id="current-section">1</span> of <span id="total-sections">0</span></span>
-            <span id="progress-percent">0%</span>
-        </div>
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill"></div>
-        </div>
-    </div>
-
-    <!-- Validation Warning (if needed) -->
-    <div id="validation-warning" style="display:none;"></div>
-
-    <!-- Main Content Area -->
-    <div id="learning-phase">
-        <!-- Study Section -->
-        <div id="study-section" class="study-section">
-            <h3 id="topic-title">📖 Study Material</h3>
-            <div id="material-content" class="topic-content"></div>
-            <button id="btn-done-studying" class="btn btn-primary" onclick="markTopicComplete()">✓ Done Studying This Topic</button>
-            <button id="btn-back-to-quiz" class="btn btn-secondary" style="display:none;" onclick="backToQuiz()">Continue to Quiz →</button>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="header-section">
+            <h1 id="main-title">Loading Training...</h1>
+            <p id="course-ver"></p>
+            <div style="position:absolute; top:0; right:0; display:flex; gap:10px;">
+                <button id="view-results-btn" onclick="showCertificationView()" class="admin-btn" style="background:var(--secondary); display:none;">📊 View Progress</button>
+                <button onclick="enterAdminMode()" class="admin-btn">🔧 ADMIN</button>
+            </div>
         </div>
 
-        <!-- Questions Section (Hidden initially) -->
-        <div id="questions-section" style="display:none;">
-            <h3>❓ Test Your Knowledge</h3>
-            <div id="questions-container"></div>
-            <button id="btn-submit-answers" class="btn btn-secondary" onclick="submitTopicQuestions()">Submit Answers</button>
-            <button id="btn-back-to-study" class="btn" style="background:#666; color:white; margin-top: 10px;" onclick="backToStudyMaterial()">← Back to Study Material</button>
-            <button id="btn-skip-quiz" class="btn" style="background:#ff9800; color:white; margin-top: 10px;" onclick="skipQuiz()">⊘ Skip This Quiz</button>
+        <!-- ADMIN PANEL -->
+        <div id="admin-panel">
+            <div class="admin-header">
+                <h3>🔧 ADMIN CONTROL PANEL</h3>
+                <button onclick="closeAdminPanel()" style="background:#666;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">Close</button>
+            </div>
+            <p><strong>Password verified.</strong> Browse for any course JSON file (must match the required structure):</p>
+            <input type="file" id="course-json-input" accept=".json" style="width:100%; padding:10px; margin:10px 0; border:2px dashed #ff9800; border-radius:8px;" onchange="loadCourse(this)">
+            <div style="margin-top:15px;">
+                <button onclick="resetToDefault()" class="btn btn-secondary" style="width:auto;">Reset to Default Course</button>
+            </div>
+            <small style="color:#666; display:block; margin-top:10px;">Tip: Files are saved locally in your browser. Refresh keeps the loaded course.</small>
         </div>
 
-        <!-- Topic Result (Hidden initially) -->
-        <div id="topic-result-banner" style="display:none;"></div>
-
-        <!-- Navigation Buttons -->
-        <div class="btn-group" id="nav-buttons" style="display:none;">
-            <button id="btn-previous" class="btn btn-secondary" onclick="previousTopic()">← Previous Topic</button>
-            <button id="btn-next" class="btn btn-primary" onclick="nextTopic()">Next Topic →</button>
+        <!-- STUDY MATERIAL -->
+        <div id="study-material-section" class="study-section">
+            <h2 id="topic-title">Select a Topic</h2>
+            <div id="material-content" class="material-content"></div>
         </div>
-    </div>
 
-    <!-- Final Results -->
-    <div id="final-results">
-        <h2>🎓 Course Complete - Final Results</h2>
-        <div class="score-box" id="final-score">0%</div>
-        <div id="result-banner"></div>
-        <div id="pending-quizzes" style="margin-top:30px;"></div>
+        <!-- QUIZ SECTION -->
+        <div id="quiz-section" class="quiz-section">
+            <div id="quiz-start-area">
+                <div class="quiz-status" id="quiz-start-status">
+                    <span id="quiz-start-text">Ready to test your knowledge?</span>
+                    <span id="quiz-already-attempted" style="display:none;">✓ Score: <strong id="quiz-attempted-score">0%</strong></span>
+                </div>
+                <button id="quiz-start-btn" class="btn btn-primary" onclick="startTopicQuiz()">Start Topic Quiz</button>
+                <button id="quiz-retake-btn" class="btn btn-secondary" style="display:none;" onclick="resetQuizForRetake()">Retake Quiz</button>
+            </div>
+            
+            <div id="quiz-active-area" style="display:none;">
+                <div class="quiz-status">
+                    <span id="quiz-in-progress-text">Answer the questions below. Click "Submit" when ready.</span>
+                </div>
+                <div id="quiz-questions-container"></div>
+                <div class="btn-group">
+                    <button id="quiz-submit-btn" class="btn btn-primary" onclick="gradeTopicQuiz()">Submit Topic Quiz</button>
+                    <button id="quiz-cancel-btn" class="btn btn-secondary" onclick="cancelQuiz()" style="background:#999;">Cancel Quiz</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div id="results-section" class="results-section">
+            <h2>📊 Certification Progress</h2>
+            <div class="score-box" id="final-score">0%</div>
+            <div id="result-banner"></div>
+            <div class="progress-summary">
+                <h3>Quiz Completion Summary</h3>
+                <div id="progress-breakdown"></div>
+            </div>
+            <div style="text-align:center; margin-top:20px;">
+                <button class="btn btn-primary" onclick="backToLearning()" style="width:auto;padding:12px 30px;">← Back to Learning</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+// ====================== DEFAULT COURSE DATA (NEW MODULE STRUCTURE) ======================
 const defaultCourseData = {
-  "courseMetadata": { "title": "Sample Course", "version": "v1.0", "passingScore": 80 },
-  "studyMaterial": [
-    { "topic": "Topic 1", "content": "This is sample content. Upload a course JSON file to get started." },
-    { "topic": "Topic 2", "content": "Upload your course file using the ADMIN panel to begin training." }
-  ],
-  "questions": [
-    { "id": 1, "topicId": 0, "type": "single", "text": "Sample question?", "options": ["Option A", "Option B"], "correct": [0], "points": 1, "feedback": "Feedback here." },
-    { "id": 2, "topicId": 1, "type": "single", "text": "Another question?", "options": ["Option A", "Option B"], "correct": [1], "points": 1, "feedback": "More feedback." }
+  "courseMetadata": {
+    "title": "Computer Hardware & Security Essentials",
+    "version": "v2.0 (Optional Quizzes)",
+    "passingScore": 70
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "title": "Module 1: Device Fundamentals",
+      "topics": [
+        {
+          "id": "t1",
+          "topic": "Input/Output Devices",
+          "content": "Input devices (Keyboard, Mouse) send data to the PC. Output devices (Monitor, Printer, Speakers) receive data from the computer.",
+          "questions": [
+            {
+              "id": 1,
+              "type": "multiple",
+              "text": "Identify all 'Output' devices from the list below:",
+              "options": ["Monitor", "Keyboard", "Laser Printer", "Webcam", "Speakers"],
+              "correct": [0, 2, 4],
+              "points": 2,
+              "feedback": "Correct! Monitors, Printers, and Speakers are output devices."
+            }
+          ]
+        },
+        {
+          "id": "t2",
+          "topic": "Device Connectivity",
+          "content": "USB, HDMI, and Ethernet are common connection types. USB is used for data and power, HDMI for video/audio display, and Ethernet for network connectivity.",
+          "questions": [
+            {
+              "id": 2,
+              "type": "single",
+              "text": "Which connector is primarily used for video and audio display output?",
+              "options": ["USB", "HDMI", "Ethernet", "Serial Port"],
+              "correct": [1],
+              "points": 1,
+              "feedback": "HDMI is the standard for video and audio display connectivity."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "title": "Module 2: Security Essentials",
+      "topics": [
+        {
+          "id": "t3",
+          "topic": "Password Security",
+          "content": "A strong password must have at least 12 characters and include a mix of uppercase letters, lowercase letters, numbers, and special symbols. Avoid common words and personal information.",
+          "questions": [
+            {
+              "id": 3,
+              "type": "single",
+              "text": "What is the minimum recommended length for a secure password?",
+              "options": ["6 characters", "8 characters", "12 characters", "16 characters"],
+              "correct": [2],
+              "points": 1,
+              "feedback": "12 characters is the modern cybersecurity standard."
+            }
+          ]
+        },
+        {
+          "id": "t4",
+          "topic": "Data Protection",
+          "content": "Encryption converts readable data into a coded form that requires a key to decode. Regular backups ensure data recovery in case of loss or corruption. Multi-factor authentication adds an extra security layer.",
+          "questions": [
+            {
+              "id": 4,
+              "type": "multiple",
+              "text": "Which practices enhance data security? (Select all that apply)",
+              "options": ["Regular backups", "Using public WiFi for sensitive data", "Encryption", "Multi-factor authentication", "Writing passwords on sticky notes"],
+              "correct": [0, 2, 3],
+              "points": 2,
+              "feedback": "Backups, encryption, and multi-factor authentication are best practices. Public WiFi and written passwords are security risks."
+            }
+          ]
+        }
+      ]
+    }
   ]
 };
 
+// ====================== GLOBAL STATE ======================
 let courseData = JSON.parse(JSON.stringify(defaultCourseData));
-let currentTopicIndex = 0;
-let courseProgress = {};
-let topicScores = {};
-let isSubmitting = false;
+let currentTopicId = null;
+let quizAttempts = {}; // { "topic_id": { score: 85, timestamp: "..." }, ... }
 
-/**
- * Validates and auto-fixes course data
- * - Auto-assigns topicId if missing
- * - Distributes questions across topics evenly if not assigned
- */
-function validateAndFixCourse(data) {
-    // Check required fields
-    if (!data.courseMetadata || !data.studyMaterial || !data.questions) {
-        throw new Error("Invalid course format. Missing required fields: courseMetadata, studyMaterial, or questions.");
-    }
-
-    // Auto-assign topicId if missing
-    const questionsNeedingTopicId = data.questions.filter(q => typeof q.topicId === 'undefined');
-    
-    if (questionsNeedingTopicId.length > 0) {
-        // Distribute questions evenly across topics by cycling through them
-        questionsNeedingTopicId.forEach((q, idx) => {
-            q.topicId = idx % data.studyMaterial.length;
-        });
-        showValidationWarning(`Auto-assigned ${questionsNeedingTopicId.length} question(s) to topics. Upload with explicit topicId fields to avoid this.`);
-    }
-
-    return data;
-}
-
-function showValidationWarning(message) {
-    const warningDiv = document.getElementById('validation-warning');
-    warningDiv.innerHTML = `<div class="warning">⚠️ ${message}</div>`;
-    warningDiv.style.display = 'block';
-}
-
-function hideValidationWarning() {
-    document.getElementById('validation-warning').style.display = 'none';
-}
-
+// ====================== CORE ENGINE ======================
 function initSystem() {
-    try {
-        courseData = validateAndFixCourse(courseData);
-    } catch (e) {
-        alert("Error loading course: " + e.message);
-        return;
-    }
-
-    hideValidationWarning();
+    // 1. Set Header
     document.getElementById('main-title').innerText = courseData.courseMetadata.title;
     document.getElementById('course-ver').innerText = courseData.courseMetadata.version;
-    document.getElementById('total-sections').innerText = courseData.studyMaterial.length;
 
-    // Initialize progress tracking
-    courseProgress = {};
-    topicScores = {};
-    for (let i = 0; i < courseData.studyMaterial.length; i++) {
-        courseProgress[i] = { studied: false, score: null, answers: {}, skipped: false };
-        topicScores[i] = null;
+    // 2. Render Sidebar Navigation
+    const modulesContainer = document.getElementById('modules-container');
+    modulesContainer.innerHTML = '';
+    
+    courseData.modules.forEach(module => {
+        const moduleDiv = document.createElement('div');
+        moduleDiv.className = 'module';
+        moduleDiv.innerHTML = `
+            <div class="module-title" onclick="toggleModule(this)">
+                ${module.title}
+                <span class="module-toggle">▼</span>
+            </div>
+            <div class="topics-list">
+                ${module.topics.map(topic => `
+                    <div class="topic-item ${currentTopicId === topic.id ? 'active' : ''}" onclick="selectTopic('${topic.id}', event)">
+                        <span>${topic.topic}</span>
+                        <span class="topic-status ${quizAttempts[topic.id] ? 'taken' : 'not-taken'}">
+                            ${quizAttempts[topic.id] ? '✓' : '○'}
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        modulesContainer.appendChild(moduleDiv);
+    });
+
+    // 3. Load first topic by default
+    if (courseData.modules.length > 0 && courseData.modules[0].topics.length > 0 && !currentTopicId) {
+        selectTopic(courseData.modules[0].topics[0].id);
     }
-
-    currentTopicIndex = 0;
-    isSubmitting = false;
-    displayTopic(0);
 }
 
-function displayTopic(topicIdx) {
-    currentTopicIndex = topicIdx;
-    
-    // Update progress indicators
-    document.getElementById('current-section').innerText = topicIdx + 1;
-    const progress = ((topicIdx + 1) / courseData.studyMaterial.length) * 100;
-    document.getElementById('progress-fill').style.width = progress + '%';
-    document.getElementById('progress-percent').innerText = Math.round(progress) + '%';
+function toggleModule(element) {
+    element.parentElement.classList.toggle('collapsed');
+}
 
-    const topic = courseData.studyMaterial[topicIdx];
+function selectTopic(topicId, event) {
+    if (event) event.stopPropagation();
     
-    // Display study material
-    document.getElementById('topic-title').innerText = `📖 ${topic.topic}`;
-    document.getElementById('material-content').innerHTML = `<p>${topic.content}</p>`;
+    currentTopicId = topicId;
     
-    // Show/hide sections based on progress
-    const topicProgress = courseProgress[topicIdx];
-    const studyDiv = document.getElementById('study-section');
-    const questionsDiv = document.getElementById('questions-section');
-    const resultDiv = document.getElementById('topic-result-banner');
-    const navDiv = document.getElementById('nav-buttons');
-
-    if (!topicProgress.studied) {
-        studyDiv.style.display = 'block';
-        questionsDiv.style.display = 'none';
-        resultDiv.style.display = 'none';
-        navDiv.style.display = 'flex';
-        document.getElementById('btn-done-studying').disabled = false;
-        document.getElementById('btn-done-studying').style.display = 'block';
-        document.getElementById('btn-back-to-study').style.display = 'none';
-        document.getElementById('btn-back-to-quiz').style.display = 'none';
-        
-        const isPrevDisabled = topicIdx === 0;
-        const isNextDisabled = true; // Can't skip ahead
-        document.getElementById('btn-previous').disabled = isPrevDisabled;
-        document.getElementById('btn-next').disabled = isNextDisabled;
-    } else {
-        if (topicProgress.score !== null) {
-            // Show completed topic - display questions in review mode with feedback
-            renderQuestionsForTopic(topicIdx, true);
-            studyDiv.style.display = 'none';
-            questionsDiv.style.display = 'block';
-            resultDiv.style.display = 'none';
-            navDiv.style.display = 'flex';
-            document.getElementById('btn-submit-answers').style.display = 'none';
-            document.getElementById('btn-back-to-study').style.display = 'none';
-            document.getElementById('btn-skip-quiz').style.display = 'none';
-            
-            const isPrevDisabled = topicIdx === 0;
-            const isNextDisabled = topicIdx === courseData.studyMaterial.length - 1;
-            document.getElementById('btn-previous').disabled = isPrevDisabled;
-            document.getElementById('btn-next').disabled = isNextDisabled;
-        } else if (topicProgress.skipped) {
-            // Show skipped quiz message with option to take it
-            qContainer = document.getElementById('questions-container');
-            qContainer.innerHTML = `<p style="text-align:center; font-size:18px; color:#ff9800;"><strong>Quiz Skipped</strong></p><p style="text-align:center; color:#666;">You can take this quiz now or continue studying other topics and come back later.</p>`;
-            studyDiv.style.display = 'none';
-            questionsDiv.style.display = 'block';
-            resultDiv.style.display = 'none';
-            navDiv.style.display = 'flex';
-            document.getElementById('btn-submit-answers').style.display = 'none';
-            document.getElementById('btn-back-to-study').style.display = 'none';
-            document.getElementById('btn-skip-quiz').style.display = 'block';
-            document.getElementById('btn-skip-quiz').innerText = '📝 Take This Quiz Now';
-            document.getElementById('btn-skip-quiz').onclick = () => { courseProgress[topicIdx].skipped = false; displayTopic(topicIdx); };
-            
-            const isPrevDisabled = topicIdx === 0;
-            const isNextDisabled = topicIdx === courseData.studyMaterial.length - 1;
-            document.getElementById('btn-previous').disabled = isPrevDisabled;
-            document.getElementById('btn-next').disabled = isNextDisabled;
-        } else {
-            renderQuestionsForTopic(topicIdx, false);
-            studyDiv.style.display = 'none';
-            questionsDiv.style.display = 'block';
-            resultDiv.style.display = 'none';
-            navDiv.style.display = 'none';
-            document.getElementById('btn-submit-answers').style.display = 'block';
-            document.getElementById('btn-submit-answers').disabled = false;
-            document.getElementById('btn-back-to-study').style.display = 'block';
-            document.getElementById('btn-done-studying').style.display = 'block';
-            document.getElementById('btn-skip-quiz').style.display = 'block';
-            document.getElementById('btn-skip-quiz').innerText = '⊘ Skip This Quiz';
-            document.getElementById('btn-skip-quiz').onclick = skipQuiz;
-            document.getElementById('btn-back-to-quiz').style.display = 'none';
-        }
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === topicId);
+        if (topicData) break;
     }
-
+    
+    if (!topicData) return;
+    
+    // Update sidebar highlighting
+    document.querySelectorAll('.topic-item').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[onclick="selectTopic('${topicId}', event)"]`)?.classList.add('active');
+    
+    // Update study material
+    document.getElementById('topic-title').innerText = topicData.topic;
+    document.getElementById('material-content').innerHTML = `
+        <div class="material-topic">
+            <div class="material-topic-content">${topicData.content}</div>
+        </div>
+    `;
+    
+    // Update quiz section
+    renderTopicQuiz(topicData);
+    
+    // Hide results section
+    document.getElementById('results-section').classList.remove('active');
+    
     window.scrollTo(0, 0);
 }
 
-function renderQuestionsForTopic(topicIdx, reviewMode = false) {
-    const topicQuestions = courseData.questions.filter(q => q.topicId === topicIdx);
-    const qContainer = document.getElementById('questions-container');
-    qContainer.innerHTML = '';
-
-    if (topicQuestions.length === 0) {
-        qContainer.innerHTML = '<p style="text-align:center; color:#999;">No questions for this topic.</p>';
+function renderTopicQuiz(topicData) {
+    const quizSection = document.getElementById('quiz-section');
+    
+    if (!topicData.questions || topicData.questions.length === 0) {
+        document.getElementById('quiz-section').style.display = 'none';
         return;
     }
+    
+    document.getElementById('quiz-section').style.display = 'block';
+    
+    // Check if quiz already taken
+    const isAttempted = quizAttempts[topicData.id];
+    
+    // Reset to start area (buttons visible, questions hidden)
+    document.getElementById('quiz-start-area').style.display = 'block';
+    document.getElementById('quiz-active-area').style.display = 'none';
+    document.getElementById('quiz-questions-container').innerHTML = '';
+    
+    if (isAttempted) {
+        // Previously attempted - show retake option
+        document.getElementById('quiz-start-text').style.display = 'none';
+        document.getElementById('quiz-already-attempted').style.display = 'inline';
+        document.getElementById('quiz-attempted-score').innerText = isAttempted.score.toFixed(1) + '%';
+        document.getElementById('quiz-start-btn').style.display = 'none';
+        document.getElementById('quiz-retake-btn').style.display = 'block';
+    } else {
+        // Not attempted yet - show start button
+        document.getElementById('quiz-start-text').style.display = 'block';
+        document.getElementById('quiz-already-attempted').style.display = 'none';
+        document.getElementById('quiz-start-btn').style.display = 'block';
+        document.getElementById('quiz-retake-btn').style.display = 'none';
+    }
+}
 
-    topicQuestions.forEach((q) => {
+function startTopicQuiz() {
+    if (!currentTopicId) return;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    if (!topicData || !topicData.questions) return;
+    
+    // Hide start area, show active quiz area
+    document.getElementById('quiz-start-area').style.display = 'none';
+    document.getElementById('quiz-active-area').style.display = 'block';
+    
+    // Ensure buttons are visible (reset from previous submission)
+    document.getElementById('quiz-submit-btn').style.display = '';
+    document.getElementById('quiz-cancel-btn').style.display = '';
+    
+    // Render questions
+    const questionsContainer = document.getElementById('quiz-questions-container');
+    questionsContainer.innerHTML = '';
+    
+    topicData.questions.forEach((q, qIdx) => {
         const inputType = q.type === 'multiple' ? 'checkbox' : 'radio';
-        const savedAnswers = courseProgress[topicIdx].answers[q.id] || [];
-
-        let optionsHTML = q.options.map((opt, oIdx) => {
-            const isChecked = savedAnswers.includes(oIdx) ? 'checked' : '';
-            const isCorrect = q.correct.includes(oIdx);
-            const optionClass = reviewMode && isCorrect ? 'correct' : (reviewMode && isChecked && !isCorrect ? 'incorrect' : '');
-            const disabled = reviewMode ? 'disabled' : '';
-            return `
-                <label class="option ${optionClass}">
-                    <input type="${inputType}" name="q${q.id}" value="${oIdx}" ${isChecked} ${disabled}> ${opt}
-                </label>
-            `;
-        }).join('');
-
-        const feedbackDisplay = reviewMode ? 'block' : 'none';
-        qContainer.innerHTML += `
-            <div class="question-card">
-                <div class="question-header">${q.text}</div>
+        const optionsHTML = q.options.map((opt, oIdx) => `
+            <label class="option">
+                <input type="${inputType}" name="q_${topicData.id}_${qIdx}" value="${oIdx}"> ${opt}
+            </label>
+        `).join('');
+        
+        questionsContainer.innerHTML += `
+            <div class="question-card" id="card-${topicData.id}-${qIdx}">
+                <div style="font-weight:bold; margin-bottom:10px;">${qIdx + 1}. ${q.text}</div>
                 ${optionsHTML}
-                <div class="feedback-text" id="feed-${q.id}" style="display: ${feedbackDisplay};"><strong>Note:</strong> ${q.feedback}</div>
+                <div class="feedback-text" id="feed-${topicData.id}-${qIdx}"><strong>Note:</strong> ${q.feedback}</div>
             </div>
         `;
     });
-}
-
-function markTopicComplete() {
-    const btn = document.getElementById('btn-done-studying');
-    btn.disabled = true;
-    btn.innerText = '✓ Studying...';
     
-    setTimeout(() => {
-        courseProgress[currentTopicIndex].studied = true;
-        displayTopic(currentTopicIndex);
-    }, 300);
+    window.scrollTo(0, document.getElementById('quiz-section').offsetTop);
 }
 
-function backToStudyMaterial() {
-    const studyDiv = document.getElementById('study-section');
-    const questionsDiv = document.getElementById('questions-section');
-    studyDiv.style.display = 'block';
-    questionsDiv.style.display = 'none';
-    document.getElementById('btn-done-studying').style.display = 'none';
-    document.getElementById('btn-back-to-quiz').style.display = 'block';
-}
-
-function backToQuiz() {
-    const studyDiv = document.getElementById('study-section');
-    const questionsDiv = document.getElementById('questions-section');
-    studyDiv.style.display = 'none';
-    questionsDiv.style.display = 'block';
-    document.getElementById('btn-done-studying').style.display = 'block';
-    document.getElementById('btn-back-to-quiz').style.display = 'none';
-}
-
-function skipQuiz() {
-    courseProgress[currentTopicIndex].skipped = true;
-    nextTopic();
-}
-
-function submitTopicQuestions() {
-    if (isSubmitting) return;
+function cancelQuiz() {
+    if (!currentTopicId) return;
     
-    const topicIdx = currentTopicIndex;
-    const topicQuestions = courseData.questions.filter(q => q.topicId === topicIdx);
-    let totalEarned = 0, maxPossible = 0;
-    const answers = {};
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    // Clear answers
+    document.querySelectorAll(`input[name^="q_${currentTopicId}_"]`).forEach(el => el.checked = false);
+    
+    // Hide feedback
+    document.querySelectorAll(`div[id^="feed-${currentTopicId}"]`).forEach(el => el.style.display = 'none');
+    
+    // Go back to start area
+    renderTopicQuiz(topicData);
+}
 
-    isSubmitting = true;
-    const submitBtn = document.getElementById('btn-submit-answers');
-    submitBtn.disabled = true;
-    submitBtn.innerText = 'Submitting...';
-
-    topicQuestions.forEach((q) => {
+function gradeTopicQuiz() {
+    if (!currentTopicId) return;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    if (!topicData || !topicData.questions) return;
+    
+    let totalEarned = 0;
+    let maxPossible = 0;
+    
+    topicData.questions.forEach((q, qIdx) => {
         maxPossible += q.points;
-        const selected = Array.from(document.querySelectorAll(`input[name="q${q.id}"]:checked`)).map(el => parseInt(el.value));
-        answers[q.id] = selected;
+        const selected = Array.from(document.querySelectorAll(`input[name="q_${currentTopicId}_${qIdx}"]:checked`))
+                              .map(el => parseInt(el.value));
         
         let qScore = 0;
-
         if (q.type === 'single') {
-            if (selected[0] === q.correct[0]) qScore = q.points;
+            if (selected.length > 0 && selected[0] === q.correct[0]) qScore = q.points;
         } else {
             const weight = q.points / q.correct.length;
+            let correctCount = 0;
             selected.forEach(val => {
-                qScore += q.correct.includes(val) ? weight : -weight;
+                if (q.correct.includes(val)) correctCount++;
             });
+            qScore = correctCount * weight;
         }
         totalEarned += Math.max(0, qScore);
         
-        const feedbackEl = document.getElementById(`feed-${q.id}`);
-        if (feedbackEl) feedbackEl.classList.add('show');
-
-        const options = document.querySelectorAll(`input[name="q${q.id}"]`);
-        options.forEach((opt) => {
-            opt.disabled = true;
-            const label = opt.parentElement;
-            const val = parseInt(opt.value);
-            if (q.correct.includes(val)) {
-                label.classList.add('correct');
-            } else if (opt.checked) {
-                label.classList.add('incorrect');
-            }
-        });
+        // Reveal feedback
+        document.getElementById(`feed-${currentTopicId}-${qIdx}`).style.display = 'block';
     });
-
-    const score = maxPossible > 0 ? (totalEarned / maxPossible) * 100 : 0;
-    courseProgress[topicIdx].score = score;
-    courseProgress[topicIdx].answers = answers;
-    topicScores[topicIdx] = score;
-
-    setTimeout(() => {
-        showTopicResult(score);
-        isSubmitting = false;
-    }, 600);
-}
-
-function showTopicResult(score) {
-    const resultDiv = document.getElementById('topic-result-banner');
-    const passed = score >= courseData.courseMetadata.passingScore;
-    const topic = courseData.studyMaterial[currentTopicIndex];
-
-    resultDiv.innerHTML = `
-        <div class="topic-result ${passed ? 'pass' : 'fail'}">
-            <h3>${passed ? '✓ Topic Passed!' : '✗ Keep Learning'}</h3>
-            <div class="topic-score">${score.toFixed(1)}%</div>
-            <p>${topic.topic} - Review the feedback above to improve.</p>
+    
+    const topicScore = (totalEarned / maxPossible) * 100;
+    
+    // Store quiz attempt
+    quizAttempts[currentTopicId] = {
+        score: topicScore,
+        timestamp: new Date().toISOString()
+    };
+    
+    saveQuizHistory();
+    updateSidebar();
+    
+    // Show the View Progress button
+    document.getElementById('view-results-btn').style.display = 'block';
+    
+    // Hide active quiz area
+    document.getElementById('quiz-active-area').style.display = 'none';
+    document.getElementById('quiz-submit-btn').style.display = 'none';
+    document.getElementById('quiz-cancel-btn').style.display = 'none';
+    
+    // Show a completion message with score and clear next steps
+    const questionsContainer = document.getElementById('quiz-questions-container');
+    const scoreMessage = document.createElement('div');
+    scoreMessage.style.cssText = 'background:#e8f5e9; border-left:6px solid var(--primary); padding:25px; border-radius:8px; margin-top:20px; text-align:center;';
+    
+    // Determine if passed this topic
+    const topicPassScore = courseData.courseMetadata.passingScore;
+    const topicPassed = topicScore >= topicPassScore;
+    const passStatus = topicPassed ? '✓ PASSED' : '○ Attempt Recorded';
+    const passColor = topicPassed ? 'var(--primary)' : '#ff9800';
+    
+    scoreMessage.innerHTML = `
+        <h3 style="color:var(--primary); margin:0 0 10px 0;">✓ Quiz Submitted!</h3>
+        <div style="font-size:42px; font-weight:bold; color:var(--secondary); margin:15px 0; font-family:'Arial Black';">
+            ${topicScore.toFixed(1)}%
+        </div>
+        <p style="color:${passColor}; font-weight:bold; font-size:16px; margin:10px 0;">${passStatus}</p>
+        <hr style="border:none; border-top:2px solid #ddd; margin:15px 0;">
+        <p style="margin:15px 0; color:#555; font-size:14px;">
+            📚 <strong>What's Next?</strong><br>
+            You can review your answers above, retake this quiz, or view your overall progress and certification status.
+        </p>
+        <div style="margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button onclick="showCertificationView()" class="btn btn-primary" style="width:auto; padding:10px 25px; background:var(--secondary); margin:0;">📊 View Final Certification</button>
+            <button onclick="resetQuizForRetake()" class="btn btn-secondary" style="width:auto; padding:10px 25px; background:#666; margin:0;">🔄 Retake This Quiz</button>
         </div>
     `;
-
-    document.getElementById('questions-section').style.display = 'none';
-    resultDiv.style.display = 'block';
-    document.getElementById('nav-buttons').style.display = 'flex';
-
-    const isPrevDisabled = currentTopicIndex === 0;
-    const isNextDisabled = currentTopicIndex === courseData.studyMaterial.length - 1;
-    document.getElementById('btn-previous').disabled = isPrevDisabled;
-    document.getElementById('btn-next').disabled = isNextDisabled;
-
-    if (currentTopicIndex === courseData.studyMaterial.length - 1) {
-        document.getElementById('btn-next').style.display = 'none';
-        setTimeout(() => showFinalResults(), 2000);
-    }
-}
-
-function nextTopic() {
-    if (currentTopicIndex < courseData.studyMaterial.length - 1) {
-        displayTopic(currentTopicIndex + 1);
-    }
-}
-
-function previousTopic() {
-    if (currentTopicIndex > 0) {
-        displayTopic(currentTopicIndex - 1);
-    }
-}
-
-function showFinalResults() {
-    document.getElementById('learning-phase').style.display = 'none';
-    document.getElementById('final-results').style.display = 'block';
-
-    let totalEarned = 0, totalPossible = 0;
+    questionsContainer.appendChild(scoreMessage);
     
-    courseData.questions.forEach(q => { totalPossible += q.points; });
+    // Show the quiz area so the completion message is visible
+    document.getElementById('quiz-active-area').style.display = 'block';
+    
+    // Show start area without calling renderTopicQuiz (which clears the container)
+    document.getElementById('quiz-start-area').style.display = 'block';
+    
+    alert(`✓ Quiz submitted! Your score: ${topicScore.toFixed(1)}%\n\nClick "View Final Certification" to see your overall progress and download your certificate if you've passed!`);
+}
 
-    courseData.questions.forEach(q => {
-        const topicScore = topicScores[q.topicId];
-        if (topicScore !== null) {
-            totalEarned += (topicScore / 100) * q.points;
+function resetQuizForRetake() {
+    if (!currentTopicId) return;
+    
+    // Find topic data
+    let topicData = null;
+    for (let module of courseData.modules) {
+        topicData = module.topics.find(t => t.id === currentTopicId);
+        if (topicData) break;
+    }
+    
+    if (!topicData) return;
+    
+    // Clear answers
+    document.querySelectorAll(`input[name^="q_${currentTopicId}_"]`).forEach(el => el.checked = false);
+    
+    // Hide feedback
+    document.querySelectorAll(`div[id^="feed-${currentTopicId}"]`).forEach(el => el.style.display = 'none');
+    
+    // Remove score message
+    const scoreMessage = document.querySelector('[style*="e8f5e9"]');
+    if (scoreMessage) scoreMessage.remove();
+    
+    // Directly start the quiz again with cleared state
+    startTopicQuiz();
+}
+
+function updateSidebar() {
+    document.querySelectorAll('.topic-item').forEach(el => {
+        const topicText = el.querySelector('span:first-child')?.innerText;
+        let topicId = null;
+        for (let module of courseData.modules) {
+            const t = module.topics.find(topic => topic.topic === topicText);
+            if (t) {
+                topicId = t.id;
+                break;
+            }
+        }
+        
+        const statusEl = el.querySelector('.topic-status');
+        if (topicId && quizAttempts[topicId]) {
+            statusEl.classList.remove('not-taken');
+            statusEl.classList.add('taken');
+            statusEl.innerText = '✓';
         }
     });
-
-    const finalScore = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
-    document.getElementById('final-score').innerText = finalScore.toFixed(1) + '%';
-
-    const banner = document.getElementById('result-banner');
-    const passed = finalScore >= courseData.courseMetadata.passingScore;
-
-    banner.innerHTML = passed ?
-        `<div class="pass-msg"><h3>🎉 PASSED!</h3><button class="btn btn-primary" onclick="generateCert(${finalScore.toFixed(1)})">Download Certificate</button></div>` :
-        `<div class="fail-msg"><h3>✗ INCOMPLETE</h3><button class="btn btn-secondary" onclick="location.reload()">Review & Try Again</button></div>`;
-
-    // Show pending quizzes
-    const pendingQuizzes = [];
-    for (let i = 0; i < courseData.studyMaterial.length; i++) {
-        if (courseProgress[i].studied && courseProgress[i].skipped) {
-            pendingQuizzes.push(i);
-        }
-    }
-
-    const quizContainer = document.getElementById('pending-quizzes');
-    if (pendingQuizzes.length > 0) {
-        let quizHTML = '<div style="background:#fff3cd; border:1px solid #ffc107; padding:20px; border-radius:8px; margin-top:20px;"><h3>📝 Available Quizzes</h3><p>You skipped quizzes for the following topics. Take them now to complete the course:</p><div style="display:grid; gap:10px;">';
-        pendingQuizzes.forEach(topicIdx => {
-            quizHTML += `<button class="btn btn-primary" onclick="takeSkippedQuiz(${topicIdx})" style="background:#1976d2;">${courseData.studyMaterial[topicIdx].topic}</button>`;
-        });
-        quizHTML += '</div></div>';
-        quizContainer.innerHTML = quizHTML;
-    } else {
-        quizContainer.innerHTML = '';
-    }
 }
 
-function takeSkippedQuiz(topicIdx) {
-    document.getElementById('final-results').style.display = 'none';
-    document.getElementById('learning-phase').style.display = 'block';
-    displayTopic(topicIdx);
-}
-
-function generateCert(score) {
-    const name = prompt("Enter your full name (as it should appear on the certificate):");
-    if (!name || name.trim() === "") {
-        alert("Please enter your full name to generate the certificate.");
+function showCertificationView() {
+    // Hide study and quiz sections
+    document.getElementById('study-material-section').style.display = 'none';
+    document.getElementById('quiz-section').style.display = 'none';
+    document.getElementById('results-section').classList.add('active');
+    
+    // Calculate overall score
+    const attemptedQuizzes = Object.values(quizAttempts);
+    if (attemptedQuizzes.length === 0) {
+        alert("❌ You must attempt at least one quiz to view results.");
         return;
     }
+    
+    const overallScore = attemptedQuizzes.reduce((sum, q) => sum + q.score, 0) / attemptedQuizzes.length;
+    const passingScore = courseData.courseMetadata.passingScore;
+    const isPassing = overallScore >= passingScore;
+    
+    document.getElementById('final-score').innerText = overallScore.toFixed(1) + '%';
+    
+    // Build progress breakdown
+    const breakdown = document.getElementById('progress-breakdown');
+    const topicItems = [];
+    let masteredTopics = [];
+    
+    for (let module of courseData.modules) {
+        for (let topic of module.topics) {
+            const attempt = quizAttempts[topic.id];
+            if (attempt) {
+                const isPassed = attempt.score >= passingScore;
+                const statusIcon = isPassed ? '✓' : '○';
+                const statusColor = isPassed ? 'var(--primary)' : '#ff9800';
+                topicItems.push(`
+                    <div class="progress-item" style="border-left:4px solid ${statusColor}; padding-left:12px;">
+                        <span><strong>${statusIcon} ${topic.topic}</strong></span>
+                        <span style="color:${statusColor}; font-weight:bold;">${attempt.score.toFixed(1)}%</span>
+                    </div>
+                `);
+                if (isPassed) {
+                    masteredTopics.push({ topic, attempt, module });
+                }
+            }
+        }
+    }
+    
+    if (topicItems.length === 0) {
+        breakdown.innerHTML = '<p style="color:#999;">No quizzes attempted yet.</p>';
+    } else {
+        breakdown.innerHTML = topicItems.join('');
+    }
+    
+    // Show pass/fail banner
+    const banner = document.getElementById('result-banner');
+    if (isPassing) {
+        banner.innerHTML = `
+            <div class="pass-msg">
+                <h3>🎉 CONGRATULATIONS!</h3>
+                <p>Your average quiz score of <strong>${overallScore.toFixed(1)}%</strong> exceeds the ${passingScore}% passing requirement!</p>
+                <p style="margin:10px 0 0 0;">You have successfully mastered <strong>${masteredTopics.length}</strong> topic(s).</p>
+                <button class="btn btn-primary" onclick="generateCert(${overallScore}, ${attemptedQuizzes.length})" style="width:auto; padding:10px 30px; margin-top:15px;">📥 Download Certificate</button>
+            </div>
+        `;
+    } else {
+        banner.innerHTML = `
+            <div class="fail-msg">
+                <h3>📈 Keep Learning</h3>
+                <p>Your current average is <strong>${overallScore.toFixed(1)}%</strong>. You need <strong>${passingScore}%</strong> to be certified.</p>
+                <p style="margin:10px 0 0 0;">Complete or retake <strong>${attemptedQuizzes.length > 0 ? 'more' : 'some'} quizzes</strong> to improve your score!</p>
+            </div>
+        `;
+    }
+    
+    // Show mastered content only if passing
+    if (isPassing && masteredTopics.length > 0) {
+        const masterySection = document.createElement('div');
+        masterySection.style.cssText = 'background:#f0f8f5; border-left:6px solid var(--primary); padding:20px; border-radius:8px; margin-top:30px;';
+        masterySection.innerHTML = `
+            <h3 style="color:var(--primary); margin-top:0;">🏆 Mastered Content</h3>
+            <p style="color:#666; margin-bottom:20px;">Below is the content you have successfully mastered:</p>
+        `;
+        
+        masteredTopics.forEach((item, idx) => {
+            const masteryItem = document.createElement('div');
+            masteryItem.style.cssText = 'background:white; border-left:4px solid var(--primary); padding:15px; margin-bottom:15px; border-radius:6px;';
+            masteryItem.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="color:#333; margin:0; padding:0;">${idx + 1}. ${item.topic.topic}</h4>
+                    <span style="background:var(--primary); color:white; padding:5px 12px; border-radius:20px; font-weight:bold; font-size:12px;">MASTERED: ${item.attempt.score.toFixed(1)}%</span>
+                </div>
+                <div style="color:#666; line-height:1.6; font-size:14px;">
+                    ${item.topic.content}
+                </div>
+            `;
+            masterySection.appendChild(masteryItem);
+        });
+        
+        // Insert mastery section after progress summary
+        const resultsSection = document.getElementById('results-section');
+        const progressSummary = resultsSection.querySelector('.progress-summary');
+        if (progressSummary && progressSummary.nextSibling) {
+            resultsSection.insertBefore(masterySection, progressSummary.nextSibling);
+        } else if (progressSummary) {
+            resultsSection.insertBefore(masterySection, progressSummary.nextSibling);
+        }
+    }
+    
+    window.scrollTo(0, 0);
+}
 
-    // Certificate metadata
-    const certNumber = "MTE-" + Math.floor(100000 + Math.random() * 900000);
-    const today = new Date();
-    const issueDate = today.toLocaleDateString('en-GB'); // DD/MM/YYYY
+function backToLearning() {
+    // Show study and quiz sections
+    document.getElementById('study-material-section').style.display = 'block';
+    document.getElementById('quiz-section').style.display = 'block';
+    document.getElementById('results-section').classList.remove('active');
+    
+    // Remove dynamically created mastery section
+    const masterySection = document.querySelector('[style*="f0f8f5"]');
+    if (masterySection) masterySection.remove();
+    
+    // Return to the currently selected topic
+    if (currentTopicId) {
+        selectTopic(currentTopicId);
+    } else if (courseData.modules.length > 0 && courseData.modules[0].topics.length > 0) {
+        selectTopic(courseData.modules[0].topics[0].id);
+    }
+}
+
+// ====================== CERTIFICATE ======================
+function generateCert(score, numQuizzes) {
+    const name = prompt("Please enter your full name for the certificate:");
+    if (!name) return;
 
     const canvas = document.createElement('canvas');
-    canvas.width = 2000;          // Higher resolution for quality printing
-    canvas.height = 1414;         // ≈ A4 landscape ratio (better proportions)
     const ctx = canvas.getContext('2d');
+    canvas.width = 1600; canvas.height = 1131;
 
-    // Background
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, 2000, 1414);
-
-    // Subtle gradient overlay for premium feel
-    const gradient = ctx.createLinearGradient(0, 0, 0, 1414);
-    gradient.addColorStop(0, 'rgba(240, 248, 255, 0.4)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 1)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 2000, 1414);
-
-    // Main border (dark blue like your original header)
-    ctx.strokeStyle = "#1976d2";
-    ctx.lineWidth = 50;
-    ctx.strokeRect(40, 40, 1920, 1334);
-
-    // Inner gold decorative border
-    ctx.strokeStyle = "#c9a03a";  // elegant gold
-    ctx.lineWidth = 12;
-    ctx.strokeRect(80, 80, 1840, 1254);
-
-    // Header / Main Title (keeping centered bold style)
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#1976d2";    // same blue as your original border
-    ctx.font = "bold 110px 'Times New Roman', serif";
-    ctx.fillText("CERTIFICATE OF COMPLETION", 1000, 280);
-
-    // Subtitle / Program Name
-    ctx.font = "60px 'Arial', sans-serif";
-    ctx.fillStyle = "#444444";
-    ctx.fillText("MTE Computer Essentials", 1000, 380);
-
-    // "This is to certify" line
-    ctx.font = "italic 48px 'Georgia', serif";
-    ctx.fillStyle = "#555555";
-    ctx.fillText("This is to certify that", 1000, 520);
-
-    // Recipient Name (large and prominent)
-    ctx.font = "bold 120px 'Georgia', serif";
-    ctx.fillStyle = "#000000";
-    ctx.fillText(name.toUpperCase(), 1000, 680);
-
-    // Achievement details
-    ctx.font = "50px Arial, sans-serif";
-    ctx.fillStyle = "#333333";
-    ctx.fillText(`has successfully completed the course`, 1000, 820);
-    ctx.fillText(`with a score of ${score.toFixed(1)}%`, 1000, 890);
-
-    ctx.font = "42px Arial, sans-serif";
-    ctx.fillText(courseData.courseMetadata.title || "Computer Essentials: Workforce Readiness", 1000, 960);
-
-    // Certificate & Date info
-    ctx.font = "38px Arial, sans-serif";
-    ctx.fillStyle = "#555555";
-    ctx.fillText(`Certificate Number: ${certNumber}`, 1000, 1080);
-    ctx.fillText(`Issued on ${issueDate} in Kampala, Uganda`, 1000, 1140);
-
-    // Signature lines
-    ctx.font = "italic 45px 'Georgia', serif";
-    ctx.fillStyle = "#333333";
-
-    // Left signature
-    ctx.beginPath();
-    ctx.moveTo(500, 1280);
-    ctx.lineTo(900, 1280);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#000000";
-    ctx.stroke();
-
-    ctx.fillText("Authorized Signatory", 700, 1340);
-
-    // Right signature (MTE representative)
-    ctx.beginPath();
-    ctx.moveTo(1100, 1280);
-    ctx.lineTo(1500, 1280);
-    ctx.stroke();
-
-    ctx.fillText("MTE Training Director", 1300, 1340);
-
-    // Optional small seal (simple circle)
-    ctx.beginPath();
-    ctx.arc(300, 1100, 140, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(201, 160, 58, 0.15)"; // light gold
-    ctx.fill();
-    ctx.strokeStyle = "#c9a03a";
-    ctx.lineWidth = 8;
-    ctx.stroke();
-    ctx.font = "bold 70px Arial";
-    ctx.fillStyle = "#1976d2";
-    ctx.fillText("MTE", 300, 1120);
-    ctx.font = "38px Arial";
-    ctx.fillText("Certified", 300, 1180);
-
-    // Download
+    ctx.fillStyle = "white"; ctx.fillRect(0, 0, 1600, 1131);
+    ctx.strokeStyle = "#1976d2"; ctx.lineWidth = 40; ctx.strokeRect(20, 20, 1560, 1091);
+    
+    ctx.textAlign = "center"; ctx.fillStyle = "#333";
+    ctx.font = "bold 80px Arial"; ctx.fillText("CERTIFICATE OF COMPLETION", 800, 300);
+    ctx.font = "italic 40px Arial"; ctx.fillText("This is to certify that", 800, 420);
+    ctx.font = "bold 90px Arial"; ctx.fillStyle = "#2e7d32"; ctx.fillText(name.toUpperCase(), 800, 550);
+    ctx.fillStyle = "#333"; ctx.font = "40px Arial"; ctx.fillText(`Has successfully completed: ${courseData.courseMetadata.title}`, 800, 680);
+    ctx.font = "30px Arial"; ctx.fillText(`Overall Score: ${score.toFixed(1)}% | Quizzes Completed: ${numQuizzes} | Date: ${new Date().toLocaleDateString()}`, 800, 800);
+    
     const link = document.createElement('a');
-    link.download = `MTE_Certificate_${name.replace(/\s+/g, '_')}_${certNumber}.png`;
+    link.download = `Cert_${name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().getTime()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-
-    // Optional feedback to user
-    alert(`Certificate generated!\n\nName: ${name}\nScore: ${score}%\nFile: ${link.download}`);
 }
 
+// ====================== COMPATIBILITY & DATA CONVERSION ======================
+function convertOldFormatToNew(oldData) {
+    // Convert old format (studyMaterial + questions) to new format (modules with topics)
+    if (!oldData.modules && oldData.studyMaterial && oldData.questions) {
+        const modules = [];
+        const questionsArray = oldData.questions || [];
+        let questionIndex = 0;
+        
+        oldData.studyMaterial.forEach((material, matIdx) => {
+            const moduleId = `m${matIdx + 1}`;
+            const topicId = `t${matIdx + 1}`;
+            
+            // Group questions for this topic (simple distribution)
+            const topicQuestions = [];
+            const questionsPerTopic = Math.ceil(questionsArray.length / oldData.studyMaterial.length);
+            for (let i = 0; i < questionsPerTopic && questionIndex < questionsArray.length; i++) {
+                topicQuestions.push(questionsArray[questionIndex++]);
+            }
+            
+            modules.push({
+                id: moduleId,
+                title: `Module ${matIdx + 1}`,
+                topics: [
+                    {
+                        id: topicId,
+                        topic: material.topic,
+                        content: material.content,
+                        questions: topicQuestions
+                    }
+                ]
+            });
+        });
+        
+        return {
+            courseMetadata: oldData.courseMetadata,
+            modules: modules
+        };
+    }
+    return oldData; // Already in new format
+}
+
+// ====================== ADMIN & LOCAL FILE LOADING ======================
 function enterAdminMode() {
-    if (prompt("Admin Password:") === "E@ss1234") document.getElementById('admin-panel').style.display = 'block';
+    const entered = prompt("🔑 Enter Admin Password:");
+    if (entered === "E@ss1234") {
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-panel').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert("❌ Incorrect password.");
+    }
 }
 
-function closeAdminPanel() { document.getElementById('admin-panel').style.display = 'none'; }
+function closeAdminPanel() {
+    document.getElementById('admin-panel').style.display = 'none';
+}
 
 function loadCourse(input) {
+    const file = input.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = function(e) {
         try {
-            courseData = JSON.parse(e.target.result);
+            let loadedData = JSON.parse(e.target.result);
+            
+            // Check if old format and convert if needed (backward compatibility)
+            if (loadedData.studyMaterial && !loadedData.modules) {
+                console.log("Detected old JSON format - converting to new format...");
+                loadedData = convertOldFormatToNew(loadedData);
+            }
+            
+            // Validate module structure
+            if (!loadedData.courseMetadata || !loadedData.modules) {
+                throw new Error("Missing required sections (courseMetadata, modules)");
+            }
+            
+            // Check modules structure
+            if (!Array.isArray(loadedData.modules) || loadedData.modules.length === 0) {
+                throw new Error("modules must be a non-empty array");
+            }
+            
+            for (let module of loadedData.modules) {
+                if (!module.id || !module.title || !module.topics || !Array.isArray(module.topics)) {
+                    throw new Error("Each module must have id, title, and topics array");
+                }
+                for (let topic of module.topics) {
+                    if (!topic.id || !topic.topic || !topic.content) {
+                        throw new Error("Each topic must have id, topic, and content");
+                    }
+                }
+            }
+            
+            courseData = loadedData;
+            currentTopicId = null;
+            quizAttempts = {};
             localStorage.setItem('loadedCourseData', JSON.stringify(courseData));
+            localStorage.removeItem('quizAttempts');
+            
             initSystem();
+            alert(`✅ Course "${courseData.courseMetadata.title}" loaded successfully!\nVersion: ${courseData.courseMetadata.version}`);
             closeAdminPanel();
         } catch (err) {
-            alert("Error parsing JSON: " + err.message);
+            alert("❌ Invalid JSON file.\n\n✓ SUPPORTED FORMATS:\n\n📌 NEW FORMAT:\n{\n  \"courseMetadata\": {...},\n  \"modules\": [{\n    \"id\": \"m1\",\n    \"title\": \"Module 1\",\n    \"topics\": [{\n      \"id\": \"t1\",\n      \"topic\": \"Topic Name\",\n      \"content\": \"<html>...\",\n      \"questions\": [...]\n    }]\n  }]\n}\n\n📌 OLD FORMAT (auto-converts):\n{\n  \"courseMetadata\": {...},\n  \"studyMaterial\": [{...}],\n  \"questions\": [...]\n}\n\n⚠️ Error details: " + err.message);
+            console.error(err);
         }
     };
-    reader.readAsText(input.files[0]);
+    reader.readAsText(file);
 }
 
 function resetToDefault() {
-    localStorage.removeItem('loadedCourseData');
-    location.reload();
+    if (confirm("Reset to the built-in default course? This will clear your quiz history.")) {
+        courseData = JSON.parse(JSON.stringify(defaultCourseData));
+        currentTopicId = null;
+        quizAttempts = {};
+        localStorage.removeItem('loadedCourseData');
+        localStorage.removeItem('quizAttempts');
+        initSystem();
+        alert("✅ Reset to default course.");
+        closeAdminPanel();
+    }
 }
 
-window.onload = () => {
+// ====================== PERSISTENCE (localStorage) ======================
+function loadSavedCourse() {
     const saved = localStorage.getItem('loadedCourseData');
-    if (saved) courseData = JSON.parse(saved);
+    if (saved) {
+        try {
+            courseData = JSON.parse(saved);
+            console.log("Loaded saved course from browser storage");
+        } catch (e) {
+            console.warn("Saved course corrupted – using default");
+            courseData = JSON.parse(JSON.stringify(defaultCourseData));
+            localStorage.removeItem('loadedCourseData');
+        }
+    }
+}
+
+function loadQuizHistory() {
+    const saved = localStorage.getItem('quizAttempts');
+    if (saved) {
+        try {
+            quizAttempts = JSON.parse(saved);
+            console.log("Loaded quiz history from browser storage");
+            // Show View Results button if quizzes have been attempted
+            if (Object.keys(quizAttempts).length > 0) {
+                document.getElementById('view-results-btn').style.display = 'block';
+            }
+        } catch (e) {
+            console.warn("Quiz history corrupted – reset");
+            quizAttempts = {};
+        }
+    }
+}
+
+function saveQuizHistory() {
+    localStorage.setItem('quizAttempts', JSON.stringify(quizAttempts));
+}
+
+// ====================== STARTUP ======================
+window.onload = function() {
+    loadSavedCourse();
+    loadQuizHistory();
     initSystem();
+    
+    // Add menu button to show certification view (optional convenience button)
+    // Could be added to header if needed
 };
 </script>
 </body>
